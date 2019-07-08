@@ -54,6 +54,7 @@ import org.jetbrains.kotlin.idea.conversion.copy.AbstractLiteralTextToKotlinCopy
 import org.jetbrains.kotlin.idea.conversion.copy.AbstractTextJavaToKotlinCopyPasteConversionTest
 import org.jetbrains.kotlin.idea.coverage.AbstractKotlinCoverageOutputFilesTest
 import org.jetbrains.kotlin.idea.debugger.*
+import org.jetbrains.kotlin.idea.debugger.coroutines.AbstractCoroutineDumpTest
 import org.jetbrains.kotlin.idea.debugger.evaluate.*
 import org.jetbrains.kotlin.idea.debugger.sequence.exec.AbstractSequenceTraceTestCase
 import org.jetbrains.kotlin.idea.decompiler.navigation.AbstractNavigateToDecompiledLibraryTest
@@ -682,6 +683,11 @@ fun main(args: Array<String>) {
             model("debugger/tinyApp/src/evaluate/singleBreakpoint", testMethod = "doSingleBreakpointTest")
             model("debugger/tinyApp/src/evaluate/multipleBreakpoints", testMethod = "doMultipleBreakpointsTest")
         }
+
+        testClass<AbstractCoroutineDumpTest> {
+            model("debugger/tinyApp/src/coroutines", pattern = KT_OR_KTS, testMethod = "doTest")
+        }
+
 
         testClass<AbstractFileRankingTest> {
             model("debugger/fileRanking")
