@@ -229,6 +229,38 @@ class KotlinBuildScriptManipulator(
         }
     }
 
+    private fun KtBlockExpression.findClassPathDependencyVersion(pluginName: String): String? {
+        return PsiTreeUtil.getChildrenOfAnyType(this, KtCallExpression::class.java).mapNotNull {
+            if (it?.calleeExpression?.text == "classpath") {
+                val dependencyName = it.valueArguments.firstOrNull()?.text?.removeSurrounding("\"")
+                if (dependencyName?.startsWith(pluginName) == true) dependencyName.substringAfter("$pluginName:") else null
+            } else null
+        }.singleOrNull()
+    }
+
+    private fun KtBlockExpression.findPluginVersionInPluginGroup(pluginName: String): String? {
+        val versionsToPluginNames =
+            PsiTreeUtil.getChildrenOfAnyType(this, KtBinaryExpression::class.java, KtDotQualifiedExpression::class.java).mapNotNull {
+                when (it) {
+                    is KtBinaryExpression -> {
+                        val receiverCalleeExpressionText = (it.left as? KtCallExpression)?.calleeExpression?.text
+                        if (it.operationReference.text == "version") {
+                            Pair(it.right?.text?.removeSurrounding("\""), receiverCalleeExpressionText)
+                        } else null
+                    }
+                    is KtDotQualifiedExpression -> {
+                        val selectorCalleeExpression = it.selectorExpression as? KtCallExpression
+                        val receiverCalleeExpressionText = (it.receiverExpression as? KtCallExpression)?.calleeExpression?.text
+                        if (selectorCalleeExpression?.calleeExpression?.text == "version") {
+                            Pair(selectorCalleeExpression.valueArguments.firstOrNull()?.text, receiverCalleeExpressionText)
+                        } else null
+                    }
+                    else -> null
+                }
+            }
+        return versionsToPluginNames.find { it.second?.trim() == pluginName }?.first
+    }
+
     private fun KtBlockExpression.findPluginInPluginsGroup(pluginName: String): KtCallExpression? {
         return PsiTreeUtil.getChildrenOfAnyType(
             this,
@@ -354,14 +386,22 @@ class KotlinBuildScriptManipulator(
                 ?.addExpressionIfMissing("languageSettings.enableLanguageFeature(\"${feature.name}\")")
         }
 
-        val featureArgumentString = feature.buildArgumentString(state)
+        val kotlinVersion = findScriptInitializer("plugins")?.getBlock()?.findPluginVersionInPluginGroup("kotlin")
+            ?: findScriptInitializer("buildscript")?.getBlock()?.findBlock("dependencies")?.findClassPathDependencyVersion("org.jetbrains.kotlin:kotlin-gradle-plugin")
+        val featureArgumentString = feature.buildArgumentString(state, kotlinVersion)
         val parameterName = "freeCompilerArgs"
         return addOrReplaceKotlinTaskParameter(
             parameterName,
             "listOf(\"$featureArgumentString\")",
             forTests
         ) {
-            val newText = text.replaceLanguageFeature(feature, state, prefix = "$parameterName = listOf(", postfix = ")")
+            val newText = text.replaceLanguageFeature(
+                feature,
+                state,
+                kotlinVersion,
+                prefix = "$parameterName = listOf(",
+                postfix = ")"
+            )
             replace(psiFactory.createExpression(newText))
         }
     }
