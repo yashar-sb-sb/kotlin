@@ -160,7 +160,4 @@ class IncrementalJsCompilerRunner(
             args.freeArgs = freeArgsBackup
         }
     }
-
-    private val ChangedFiles.Known.allAsSequence: Sequence<File>
-        get() = modified.asSequence() + removed.asSequence()
 }
