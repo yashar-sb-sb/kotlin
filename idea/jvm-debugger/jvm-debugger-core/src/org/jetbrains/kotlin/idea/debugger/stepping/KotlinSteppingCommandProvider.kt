@@ -8,6 +8,7 @@ package org.jetbrains.kotlin.idea.debugger.stepping
 import com.intellij.debugger.NoDataException
 import com.intellij.debugger.SourcePosition
 import com.intellij.debugger.engine.DebugProcessImpl
+import com.intellij.debugger.engine.DebugProcessImpl.ResumeCommand
 import com.intellij.debugger.engine.MethodFilter
 import com.intellij.debugger.engine.SuspendContextImpl
 import com.intellij.debugger.impl.DebuggerContextImpl
@@ -29,6 +30,8 @@ import org.jetbrains.kotlin.idea.caches.resolve.resolveToCall
 import org.jetbrains.kotlin.idea.caches.resolve.resolveToDescriptorIfAny
 import org.jetbrains.kotlin.idea.caches.resolve.unsafeResolveToDescriptor
 import org.jetbrains.kotlin.idea.core.util.CodeInsightUtils
+import org.jetbrains.kotlin.idea.core.util.getLineNumber
+import org.jetbrains.kotlin.idea.core.util.getLineStartOffset
 import org.jetbrains.kotlin.idea.debugger.*
 import org.jetbrains.kotlin.idea.debugger.stepping.DexBytecode.GOTO
 import org.jetbrains.kotlin.idea.debugger.stepping.DexBytecode.MOVE
@@ -36,8 +39,6 @@ import org.jetbrains.kotlin.idea.debugger.stepping.DexBytecode.RETURN
 import org.jetbrains.kotlin.idea.debugger.stepping.DexBytecode.RETURN_OBJECT
 import org.jetbrains.kotlin.idea.debugger.stepping.DexBytecode.RETURN_VOID
 import org.jetbrains.kotlin.idea.debugger.stepping.DexBytecode.RETURN_WIDE
-import org.jetbrains.kotlin.idea.core.util.getLineNumber
-import org.jetbrains.kotlin.idea.core.util.getLineStartOffset
 import org.jetbrains.kotlin.idea.util.application.runReadAction
 import org.jetbrains.kotlin.load.java.JvmAbi
 import org.jetbrains.kotlin.psi.*
@@ -57,7 +58,7 @@ class KotlinSteppingCommandProvider : JvmSteppingCommandProvider() {
         suspendContext: SuspendContextImpl?,
         ignoreBreakpoints: Boolean,
         stepSize: Int
-    ): DebugProcessImpl.ResumeCommand? {
+    ): ResumeCommand? {
         if (suspendContext == null || suspendContext.isResumed) return null
 
         val sourcePosition = suspendContext.debugProcess.debuggerContext.sourcePosition ?: return null
@@ -69,15 +70,25 @@ class KotlinSteppingCommandProvider : JvmSteppingCommandProvider() {
         suspendContext: SuspendContextImpl,
         ignoreBreakpoints: Boolean,
         debuggerContext: DebuggerContextImpl
-    ): DebugProcessImpl.ResumeCommand? {
+    ): ResumeCommand? {
         return getStepOverCommand(suspendContext, ignoreBreakpoints, debuggerContext.sourcePosition)
+    }
+
+    override fun getStepIntoCommand(
+        suspendContext: SuspendContextImpl?,
+        ignoreFilters: Boolean,
+        methodFilter: MethodFilter?,
+        stepSize: Int
+    ): ResumeCommand? {
+        return KotlinStepIntoActionFactory.create(suspendContext, ignoreFilters, methodFilter, stepSize)
+            ?: super.getStepIntoCommand(suspendContext, ignoreFilters, methodFilter, stepSize)
     }
 
     private fun getStepOverCommand(
         suspendContext: SuspendContextImpl,
         ignoreBreakpoints: Boolean,
         sourcePosition: SourcePosition
-    ): DebugProcessImpl.ResumeCommand? {
+    ): ResumeCommand? {
         val kotlinSourcePosition = KotlinSourcePosition.create(sourcePosition) ?: return null
 
         if (isSpecialStepOverNeeded(kotlinSourcePosition)) {
@@ -144,18 +155,18 @@ class KotlinSteppingCommandProvider : JvmSteppingCommandProvider() {
     }
 
     @TestOnly
-    fun getStepOutCommand(suspendContext: SuspendContextImpl, debugContext: DebuggerContextImpl): DebugProcessImpl.ResumeCommand? {
+    fun getStepOutCommand(suspendContext: SuspendContextImpl, debugContext: DebuggerContextImpl): ResumeCommand? {
         return getStepOutCommand(suspendContext, debugContext.sourcePosition)
     }
 
-    override fun getStepOutCommand(suspendContext: SuspendContextImpl?, stepSize: Int): DebugProcessImpl.ResumeCommand? {
+    override fun getStepOutCommand(suspendContext: SuspendContextImpl?, stepSize: Int): ResumeCommand? {
         if (suspendContext == null || suspendContext.isResumed) return null
 
         val sourcePosition = suspendContext.debugProcess.debuggerContext.sourcePosition ?: return null
         return getStepOutCommand(suspendContext, sourcePosition)
     }
 
-    private fun getStepOutCommand(suspendContext: SuspendContextImpl, sourcePosition: SourcePosition): DebugProcessImpl.ResumeCommand? {
+    private fun getStepOutCommand(suspendContext: SuspendContextImpl, sourcePosition: SourcePosition): ResumeCommand? {
         val file = sourcePosition.file as? KtFile ?: return null
         if (sourcePosition.line < 0) return null
 

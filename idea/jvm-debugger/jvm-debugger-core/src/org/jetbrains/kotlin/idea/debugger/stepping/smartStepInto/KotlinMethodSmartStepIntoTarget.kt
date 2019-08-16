@@ -37,6 +37,9 @@ class KotlinMethodSmartStepTarget(
     val isInvoke: Boolean
         get() = descriptor is FunctionInvokeDescriptor
 
+    val isInline: Boolean
+        get() = InlineUtil.isInline(descriptor)
+
     private val isExtension: Boolean
         get() = descriptor.isExtension
 

@@ -245,6 +245,7 @@ abstract class KotlinDebuggerTestBase : KotlinDebuggerTestCase() {
                         KotlinBasicStepMethodFilter(
                             stepTarget.declaration?.createSmartPointer(),
                             stepTarget.isInvoke,
+                            stepTarget.isInline,
                             stepTarget.targetMethodName,
                             stepTarget.getCallingExpressionLines()!!)
                     is MethodSmartStepTarget -> BasicStepMethodFilter(stepTarget.method, stepTarget.getCallingExpressionLines())

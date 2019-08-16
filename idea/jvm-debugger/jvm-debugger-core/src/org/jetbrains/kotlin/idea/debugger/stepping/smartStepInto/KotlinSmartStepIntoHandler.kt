@@ -43,7 +43,7 @@ class KotlinSmartStepIntoHandler : JvmSmartStepIntoHandler() {
             is KotlinMethodSmartStepTarget -> {
                 val declarationPtr = stepTarget.declaration?.createSmartPointer()
                 val lines = stepTarget.callingExpressionLines ?: return null
-                KotlinBasicStepMethodFilter(declarationPtr, stepTarget.isInvoke, stepTarget.targetMethodName, lines)
+                KotlinBasicStepMethodFilter(declarationPtr, stepTarget.isInvoke, stepTarget.isInline, stepTarget.targetMethodName, lines)
             }
             is KotlinLambdaSmartStepTarget -> {
                 val lines = stepTarget.callingExpressionLines ?: return null

@@ -25,7 +25,10 @@ import org.jetbrains.kotlin.descriptors.CallableMemberDescriptor
 import org.jetbrains.kotlin.descriptors.CallableMemberDescriptor.Kind.DECLARATION
 import org.jetbrains.kotlin.idea.caches.resolve.resolveToDescriptorIfAny
 import org.jetbrains.kotlin.idea.codeInsight.DescriptorToSourceUtilsIde
+import org.jetbrains.kotlin.idea.debugger.safeLocation
+import org.jetbrains.kotlin.idea.debugger.safeVisibleVariableByName
 import org.jetbrains.kotlin.idea.util.application.runReadAction
+import org.jetbrains.kotlin.load.java.JvmAbi
 import org.jetbrains.kotlin.psi.KtClass
 import org.jetbrains.kotlin.psi.KtDeclaration
 import org.jetbrains.kotlin.psi.KtProperty
@@ -35,6 +38,7 @@ import org.jetbrains.kotlin.resolve.DescriptorUtils
 class KotlinBasicStepMethodFilter(
     private val declarationPtr: SmartPsiElementPointer<KtDeclaration>?,
     private val isInvoke: Boolean,
+    private val isInline: Boolean,
     private val targetMethodName: String,
     private val myCallingExpressionLines: Range<Int>
 ) : NamedMethodFilter {
@@ -47,8 +51,9 @@ class KotlinBasicStepMethodFilter(
     override fun getMethodName() = targetMethodName
 
     override fun locationMatches(process: DebugProcessImpl, location: Location): Boolean {
-        val method = location.method()
-        if (targetMethodName != method.name()) return false
+        if (!checkCurrentMethodName(process, location)) {
+            return false
+        }
 
         val positionManager = process.positionManager
 
@@ -59,7 +64,7 @@ class KotlinBasicStepMethodFilter(
                 it !is KtProperty || !it.isLocal
             }
 
-            if (declaration is KtClass && method.name() == "<init>") {
+            if (declaration is KtClass && location.method().name() == "<init>") {
                 declaration.resolveToDescriptorIfAny()?.unsubstitutedPrimaryConstructor to declaration
             } else {
                 declaration?.resolveToDescriptorIfAny() to declaration
@@ -91,5 +96,22 @@ class KotlinBasicStepMethodFilter(
             val currentBaseDeclaration = DescriptorToSourceUtilsIde.getAnyDeclaration(currentDeclaration.project, baseOfCurrent)
             declaration.isEquivalentTo(currentBaseDeclaration)
         }
+    }
+
+    private fun checkCurrentMethodName(process: DebugProcessImpl, location: Location): Boolean {
+        if (!isInline) {
+            return targetMethodName == location.method().name()
+        }
+
+        val availableContexts = process.suspendManager.eventContexts.filter { !it.isResumed }
+        for (suspendContext in availableContexts) {
+            val frameProxy = suspendContext.frameProxy ?: continue
+            if (frameProxy.safeLocation() != location) continue
+
+            val varName = JvmAbi.LOCAL_VARIABLE_NAME_PREFIX_INLINE_FUNCTION + targetMethodName
+            return frameProxy.safeVisibleVariableByName(varName) != null
+        }
+
+        return false
     }
 }
