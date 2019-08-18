@@ -59,13 +59,11 @@ fun testVariableWithBound() {
 
     <!DEBUG_INFO_EXPRESSION_TYPE("Inv<kotlin.Int>")!>c1<!>
 
-    // should be an error after variable fixation
-    val c2 = select(SubInv<String>(), createWithNumberBound())
+    val c2 = <!TYPE_MISMATCH!>select<!>(SubInv<String>(), createWithNumberBound())
 
     <!DEBUG_INFO_EXPRESSION_TYPE("Inv<kotlin.String>")!>c2<!>
 
-    // should be an error after variable fixation
-    val c3 = select(SubInv<Double>(), createWithIntBound())
+    val c3 = <!TYPE_MISMATCH!>select<!>(SubInv<Double>(), createWithIntBound())
 
     <!DEBUG_INFO_EXPRESSION_TYPE("Inv<kotlin.Double>")!>c3<!>
 }
@@ -76,7 +74,7 @@ fun testCapturedVariable() {
 
     fun <K> createInvIn(): Inv<in K> = TODO()
 
-    val c1 = select(SubInv<Number>(), createInvOut())
+    val c1 = <!TYPE_MISMATCH!>select<!>(SubInv<Number>(), createInvOut())
 
     <!DEBUG_INFO_EXPRESSION_TYPE("Inv<kotlin.Number>")!>c1<!>
 
@@ -84,7 +82,7 @@ fun testCapturedVariable() {
 
     <!DEBUG_INFO_EXPRESSION_TYPE("Inv<out kotlin.Number>")!>c2<!>
 
-    val c3 = select(SubInv<Number>(), createInvIn())
+    val c3 = <!TYPE_MISMATCH!>select<!>(SubInv<Number>(), createInvIn())
 
     <!DEBUG_INFO_EXPRESSION_TYPE("Inv<kotlin.Number>")!>c3<!>
 }

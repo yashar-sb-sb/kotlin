@@ -306,6 +306,24 @@ class DiagnosticReporterByTrackingStrategy(
                         )
                     )
                 }
+
+                (position as? FixVariableConstraintPosition)?.let {
+                    val morePreciseDiagnosticExists = allDiagnostics.any { other ->
+                        other is NewConstraintError && other.position.from !is FixVariableConstraintPosition
+                    }
+                    if (morePreciseDiagnosticExists) return
+
+                    val call = it.resolvedAtom?.atom?.safeAs<PSIKotlinCall>()?.psiCall ?: call
+                    val expression = call.calleeExpression ?: return
+
+                    trace.reportDiagnosticOnce(
+                        TYPE_MISMATCH.on(
+                            expression,
+                            constraintError.upperKotlinType.unCapture(),
+                            constraintError.lowerKotlinType.unCapture()
+                        )
+                    )
+                }
             }
 
             CapturedTypeFromSubtyping::class.java -> {
