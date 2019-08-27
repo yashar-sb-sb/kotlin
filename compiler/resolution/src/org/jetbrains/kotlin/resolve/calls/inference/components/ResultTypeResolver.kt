@@ -22,6 +22,7 @@ import org.jetbrains.kotlin.resolve.calls.inference.model.*
 import org.jetbrains.kotlin.resolve.constants.IntegerLiteralTypeConstructor
 import org.jetbrains.kotlin.types.*
 import org.jetbrains.kotlin.types.model.KotlinTypeMarker
+import org.jetbrains.kotlin.types.model.TypeSubstitutorMarker
 import org.jetbrains.kotlin.types.model.TypeSystemInferenceExtensionContext
 
 class ResultTypeResolver(
@@ -30,6 +31,7 @@ class ResultTypeResolver(
 ) {
     interface Context : TypeSystemInferenceExtensionContext {
         fun isProperType(type: KotlinTypeMarker): Boolean
+        fun buildNotFixedVariablesToStubTypesSubstitutor(): TypeSubstitutorMarker
     }
 
     fun findResultType(c: Context, variableWithConstraints: VariableWithConstraints, direction: ResolveDirection): KotlinTypeMarker {
@@ -83,9 +85,10 @@ class ResultTypeResolver(
     }
 
     private fun Context.findSubType(variableWithConstraints: VariableWithConstraints): KotlinTypeMarker? {
-        val lowerConstraints = variableWithConstraints.constraints.filter { it.kind == ConstraintKind.LOWER && isProperType(it.type) }
-        if (lowerConstraints.isNotEmpty()) {
-            val types = sinkIntegerLiteralTypes(lowerConstraints.map { it.type })
+        val lowerConstraintTypes = prepareLowerConstraints(variableWithConstraints.constraints)
+
+        if (lowerConstraintTypes.isNotEmpty()) {
+            val types = sinkIntegerLiteralTypes(lowerConstraintTypes)
             val commonSuperType = with(NewCommonSuperTypeCalculator) {
                 this@findSubType.commonSuperType(types)
             }
@@ -114,6 +117,27 @@ class ResultTypeResolver(
         }
 
         return null
+    }
+
+    private fun Context.prepareLowerConstraints(constraints: List<Constraint>): List<KotlinTypeMarker> {
+        val types = constraints.mapNotNull { if (it.kind == ConstraintKind.LOWER) it.type else null }
+
+        var atLeastOneProper = false
+        var atLeastOneNonProper = false
+
+        for (type in types) {
+            if (isProperType(type))
+                atLeastOneProper = true
+            else
+                atLeastOneNonProper = true
+        }
+
+        if (!atLeastOneProper) return emptyList()
+        if (!atLeastOneNonProper) return types
+
+        val notFixedToStubTypesSubstitutor = buildNotFixedVariablesToStubTypesSubstitutor()
+
+        return types.map { notFixedToStubTypesSubstitutor.safeSubstitute(it) }
     }
 
     private fun Context.sinkIntegerLiteralTypes(types: List<KotlinTypeMarker>): List<KotlinTypeMarker> {

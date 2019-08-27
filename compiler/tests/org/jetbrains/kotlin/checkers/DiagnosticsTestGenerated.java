@@ -10071,6 +10071,11 @@ public class DiagnosticsTestGenerated extends AbstractDiagnosticsTest {
                     runTest("compiler/testData/diagnostics/tests/inference/commonSystem/cstFromNullableChildAndNonParameterizedType.kt");
                 }
 
+                @TestMetadata("cstWithTypeContainingNonFixedVariable.kt")
+                public void testCstWithTypeContainingNonFixedVariable() throws Exception {
+                    runTest("compiler/testData/diagnostics/tests/inference/commonSystem/cstWithTypeContainingNonFixedVariable.kt");
+                }
+
                 @TestMetadata("dontCaptureTypeVariable.kt")
                 public void testDontCaptureTypeVariable() throws Exception {
                     runTest("compiler/testData/diagnostics/tests/inference/commonSystem/dontCaptureTypeVariable.kt");
@@ -10099,6 +10104,16 @@ public class DiagnosticsTestGenerated extends AbstractDiagnosticsTest {
                 @TestMetadata("kt31969.kt")
                 public void testKt31969() throws Exception {
                     runTest("compiler/testData/diagnostics/tests/inference/commonSystem/kt31969.kt");
+                }
+
+                @TestMetadata("kt32818.kt")
+                public void testKt32818() throws Exception {
+                    runTest("compiler/testData/diagnostics/tests/inference/commonSystem/kt32818.kt");
+                }
+
+                @TestMetadata("kt33197.kt")
+                public void testKt33197() throws Exception {
+                    runTest("compiler/testData/diagnostics/tests/inference/commonSystem/kt33197.kt");
                 }
 
                 @TestMetadata("kt3372toCollection.kt")

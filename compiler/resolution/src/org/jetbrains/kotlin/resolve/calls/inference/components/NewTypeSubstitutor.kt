@@ -74,19 +74,34 @@ interface NewTypeSubstitutor: TypeSubstitutorMarker {
             }
             val capturedType = if (type is DefinitelyNotNullType) type.original as NewCapturedType else type as NewCapturedType
             val lower = capturedType.lowerType?.let { substitute(it, keepAnnotation, runCapturedChecks = false) }
-            if (lower != null && capturedType.lowerType is StubType) {
-                return NewCapturedType(
-                    capturedType.captureStatus,
-                    NewCapturedTypeConstructor(TypeProjectionImpl(typeConstructor.projection.projectionKind, lower)),
-                    lower
-                )
+            if (lower != null) {
+                return when {
+                    capturedType.lowerType is StubType ->
+                        NewCapturedType(
+                            capturedType.captureStatus,
+                            NewCapturedTypeConstructor(TypeProjectionImpl(typeConstructor.projection.projectionKind, lower)),
+                            lower
+                        )
+
+                    lower is StubType ->
+                        lower
+
+                    else ->
+                        throw IllegalStateException(
+                            "Illegal type substitutor: $this, " +
+                                    "because for captured type '$type' lower type approximation should be null, but it is: '$lower'," +
+                                    "original lower type: '${capturedType.lowerType}"
+                        )
+                }
             }
 
-            if (lower != null) throw IllegalStateException(
-                "Illegal type substitutor: $this, " +
-                        "because for captured type '$type' lower type approximation should be null, but it is: '$lower'," +
-                        "original lower type: '${capturedType.lowerType}"
-            )
+            val projectedType = capturedType.constructor.projection.type
+            if (projectedType is SimpleType) {
+                val substitutedProjectedType = substitute(projectedType, keepAnnotation, runCapturedChecks = false)
+                if (substitutedProjectedType is StubType) {
+                    return substitutedProjectedType
+                }
+            }
 
             if (AbstractTypeChecker.RUN_SLOW_ASSERTIONS) {
                 typeConstructor.supertypes.forEach { supertype ->

@@ -126,7 +126,7 @@ class ConstraintInjector(
         val possibleNewConstraints: MutableList<Pair<TypeVariableMarker, Constraint>>
     ) : AbstractTypeCheckerContextForConstraintSystem(), ConstraintIncorporator.Context, TypeSystemInferenceExtensionContext by c {
 
-        val baseContext: AbstractTypeCheckerContext = newBaseTypeCheckerContext(isErrorTypeEqualsToAnything)
+        val baseContext: AbstractTypeCheckerContext = newBaseTypeCheckerContext(isErrorTypeEqualsToAnything, isStubTypeEqualsToAnything)
 
         override fun substitutionSupertypePolicy(type: SimpleTypeMarker): SupertypesPolicy {
             return baseContext.substitutionSupertypePolicy(type)

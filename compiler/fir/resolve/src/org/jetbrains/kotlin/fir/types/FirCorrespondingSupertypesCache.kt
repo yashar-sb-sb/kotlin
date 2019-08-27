@@ -18,7 +18,7 @@ import org.jetbrains.kotlin.types.model.SimpleTypeMarker
 import org.jetbrains.kotlin.types.model.TypeConstructorMarker
 
 class FirCorrespondingSupertypesCache(private val session: FirSession) : FirSessionComponent {
-    private val context = ConeTypeCheckerContext(false, session)
+    private val context = ConeTypeCheckerContext(isErrorTypeEqualsToAnything = false, isStubTypeEqualsToAnything = true, session = session)
     private val cache = HashMap<ConeClassLikeSymbol, Map<ConeClassLikeSymbol, List<ConeClassLikeType>>?>(1000, 0.5f)
 
     fun getCorrespondingSupertypes(

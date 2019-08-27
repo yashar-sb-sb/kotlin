@@ -94,7 +94,8 @@ object NewCommonSuperTypeCalculator {
         val uniqueTypes = arrayListOf<SimpleTypeMarker>()
         for (type in types) {
             val isNewUniqueType = uniqueTypes.all {
-                !AbstractTypeChecker.equalTypes(this, it, type) || it.typeConstructor().isIntegerLiteralTypeConstructor()
+                !AbstractTypeChecker.equalTypes(this, it, type, stubTypesEqualToAnything = false) ||
+                        it.typeConstructor().isIntegerLiteralTypeConstructor()
             }
             if (isNewUniqueType) {
                 uniqueTypes += type
@@ -111,7 +112,9 @@ object NewCommonSuperTypeCalculator {
         while (iterator.hasNext()) {
             val potentialSubtype = iterator.next()
             val isSubtype = supertypes.any { supertype ->
-                supertype !== potentialSubtype && AbstractTypeChecker.isSubtypeOf(this, potentialSubtype, supertype)
+                supertype !== potentialSubtype && AbstractTypeChecker.isSubtypeOf(
+                    this, potentialSubtype, supertype, stubTypesEqualToAnything = false
+                )
             }
 
             if (isSubtype) iterator.remove()
@@ -126,7 +129,14 @@ object NewCommonSuperTypeCalculator {
     ): SimpleTypeMarker {
         if (types.size == 1) return types.single()
 
-        val uniqueTypes = uniquify(types)
+        val nonStubTypes = types.filter { !it.isStubType() }
+        if (nonStubTypes.size == 1) return nonStubTypes.single()
+
+        assert(nonStubTypes.isNotEmpty()) {
+            "There should be at least one non-stub type to compute common supertype but there are: $types"
+        }
+
+        val uniqueTypes = uniquify(nonStubTypes)
         if (uniqueTypes.size == 1) return uniqueTypes.single()
 
         val explicitSupertypes = filterSupertypes(uniqueTypes)
@@ -134,7 +144,6 @@ object NewCommonSuperTypeCalculator {
         findErrorTypeInSupertypesIfItIsNeeded(explicitSupertypes)?.let { return it }
 
         findCommonIntegerLiteralTypesSuperType(explicitSupertypes)?.let { return it }
-//        IntegerLiteralTypeConstructor.findCommonSuperType(explicitSupertypes)?.let { return it }
 
         return findSuperTypeConstructorsAndIntersectResult(explicitSupertypes, depth)
     }
@@ -187,7 +196,7 @@ object NewCommonSuperTypeCalculator {
             nullable = false
         )
 
-        val typeCheckerContext = newBaseTypeCheckerContext(false)
+        val typeCheckerContext = newBaseTypeCheckerContext(errorTypesEqualToAnything = false, stubTypesEqualToAnything = true)
 
         /**
          * Sometimes one type can have several supertypes with given type constructor, suppose A <: List<Int> and A <: List<Double>.
@@ -206,11 +215,17 @@ object NewCommonSuperTypeCalculator {
             val parameter = constructor.getParameter(index)
             var thereIsStar = false
             val typeProjections = correspondingSuperTypes.mapNotNull {
-                it.getArgumentOrNull(index)?.let {
-                    if (it.isStarProjection()) {
-                        thereIsStar = true
-                        null
-                    } else it
+                it.getArgumentOrNull(index)?.let { typeArgument ->
+                    when {
+                        typeArgument.isStarProjection() -> {
+                            thereIsStar = true
+                            null
+                        }
+
+                        typeArgument.getType().asSimpleType()?.isStubType() == true -> null
+
+                        else -> typeArgument
+                    }
                 }
             }
 
