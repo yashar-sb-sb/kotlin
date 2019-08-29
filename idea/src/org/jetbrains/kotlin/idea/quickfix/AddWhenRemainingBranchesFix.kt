@@ -26,10 +26,10 @@ import org.jetbrains.kotlin.descriptors.ClassKind
 import org.jetbrains.kotlin.diagnostics.Diagnostic
 import org.jetbrains.kotlin.idea.caches.resolve.analyze
 import org.jetbrains.kotlin.idea.core.ShortenReferences
-import org.jetbrains.kotlin.idea.core.quoteIfNeeded
 import org.jetbrains.kotlin.idea.intentions.ImportAllMembersIntention
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.getNonStrictParentOfType
+import org.jetbrains.kotlin.renderer.render
 import org.jetbrains.kotlin.resolve.descriptorUtil.fqNameSafe
 import org.jetbrains.kotlin.utils.addToStdlib.firstNotNullResult
 
@@ -89,7 +89,7 @@ class AddWhenRemainingBranchesFix(
                             ""
                         } else {
                             "is "
-                        } + case.descriptor.fqNameSafe.quoteIfNeeded().asString()
+                        } + case.descriptor.fqNameSafe.render()
                 }
                 val entry = psiFactory.createWhenEntry("$branchConditionText -> TODO()")
                 if (elseBranch != null) {

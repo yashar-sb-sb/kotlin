@@ -200,7 +200,7 @@ open class CreateClassFromUsageFix<E : KtElement> protected constructor(
 
             val targetDirectory = dialog.targetDirectory ?: return
             val fileName = "$className.${KotlinFileType.EXTENSION}"
-            val packageFqName = targetDirectory.getFqNameWithImplicitPrefix()?.quoteIfNeeded()
+            val packageFqName = targetDirectory.getFqNameWithImplicitPrefix()
 
             file.project.executeWriteCommand(text) {
                 val targetFile = getOrCreateKotlinFile(fileName, targetDirectory, (packageFqName ?: defaultPackageFqName).asString())

@@ -18,6 +18,7 @@ import org.jetbrains.kotlin.lexer.KtModifierKeywordToken
 import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
+import org.jetbrains.kotlin.renderer.render
 import org.jetbrains.kotlin.resolve.ImportPath
 
 @JvmOverloads
@@ -429,7 +430,7 @@ class KtPsiFactory @JvmOverloads constructor(private val project: Project, val m
     fun createStringTemplate(content: String) = createExpression("\"$content\"") as KtStringTemplateExpression
 
     fun createPackageDirective(fqName: FqName): KtPackageDirective {
-        return createFile("package ${fqName.asString()}").packageDirective!!
+        return createFile("package ${fqName.render()}").packageDirective!!
     }
 
     fun createPackageDirectiveIfNeeded(fqName: FqName): KtPackageDirective? {

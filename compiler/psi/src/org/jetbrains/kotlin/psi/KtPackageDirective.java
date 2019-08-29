@@ -127,9 +127,9 @@ public class KtPackageDirective extends KtModifierListOwnerStub<KotlinPlaceHolde
         }
 
         KtPsiFactory psiFactory = new KtPsiFactory(getProject());
-        PsiElement newExpression = psiFactory.createExpression(fqName.asString());
+        PsiElement newExpression = psiFactory.createPackageDirective(fqName).getPackageNameExpression();
         KtExpression currentExpression = getPackageNameExpression();
-        if (currentExpression != null) {
+        if (currentExpression != null && newExpression != null) {
             currentExpression.replace(newExpression);
             return;
         }

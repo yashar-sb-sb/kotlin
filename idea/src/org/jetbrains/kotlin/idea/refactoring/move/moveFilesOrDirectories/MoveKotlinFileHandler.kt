@@ -128,7 +128,7 @@ class MoveKotlinFileHandler : MoveFileHandler() {
         val packageNameInfo = file.getPackageNameInfo(moveDestination, true) ?: return
         val newFqName = packageNameInfo.newContainer.fqName
         if (newFqName != null) {
-            file.packageDirective?.fqName = newFqName.quoteIfNeeded()
+            file.packageDirective?.fqName = newFqName
         }
     }
 

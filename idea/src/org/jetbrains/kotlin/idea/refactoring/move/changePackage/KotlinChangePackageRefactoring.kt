@@ -18,7 +18,6 @@ package org.jetbrains.kotlin.idea.refactoring.move.changePackage
 
 import com.intellij.refactoring.RefactoringBundle
 import org.jetbrains.kotlin.idea.codeInsight.shorten.runRefactoringAndKeepDelayedRequests
-import org.jetbrains.kotlin.idea.core.quoteIfNeeded
 import org.jetbrains.kotlin.idea.core.util.runSynchronouslyWithProgress
 import org.jetbrains.kotlin.idea.refactoring.move.ContainerChangeInfo
 import org.jetbrains.kotlin.idea.refactoring.move.ContainerInfo
@@ -55,7 +54,7 @@ class KotlinChangePackageRefactoring(val file: KtFile) {
         val internalUsages = file.getInternalReferencesToUpdateOnPackageNameChange(changeInfo)
 
         project.executeWriteCommand("Change file's package to '${newFqName.asString()}'") {
-            packageDirective.fqName = newFqName.quoteIfNeeded()
+            packageDirective.fqName = newFqName
             postProcessMoveUsages(internalUsages)
             project.runRefactoringAndKeepDelayedRequests { declarationProcessor.execute(declarationUsages) }
         }

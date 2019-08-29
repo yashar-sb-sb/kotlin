@@ -37,7 +37,6 @@ import org.jetbrains.kotlin.asJava.namedUnwrappedElement
 import org.jetbrains.kotlin.asJava.toLightElements
 import org.jetbrains.kotlin.idea.codeInsight.shorten.addToBeShortenedDescendantsToWaitingSet
 import org.jetbrains.kotlin.idea.core.deleteSingle
-import org.jetbrains.kotlin.idea.core.quoteIfNeeded
 import org.jetbrains.kotlin.idea.refactoring.broadcastRefactoringExit
 import org.jetbrains.kotlin.idea.refactoring.fqName.getKotlinFqName
 import org.jetbrains.kotlin.idea.refactoring.move.*
@@ -51,6 +50,7 @@ import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.containingClassOrObject
 import org.jetbrains.kotlin.psi.psiUtil.getElementTextWithContext
 import org.jetbrains.kotlin.psi.psiUtil.isAncestor
+import org.jetbrains.kotlin.renderer.render
 import org.jetbrains.kotlin.utils.ifEmpty
 import org.jetbrains.kotlin.utils.keysToMap
 import java.util.*
@@ -207,14 +207,14 @@ class MoveKotlinDeclarationsProcessor(
                         } else null
                     }
 
-                val name = lightElement.getKotlinFqName()?.quoteIfNeeded()?.asString()
+                val name = lightElement.getKotlinFqName()?.render()
                 if (name != null) {
                     TextOccurrencesUtil.findNonCodeUsages(
                         lightElement,
                         name,
                         descriptor.searchInCommentsAndStrings,
                         descriptor.searchInNonCode,
-                        FqName(newFqName).quoteIfNeeded().asString(),
+                        FqName(newFqName).render(),
                         results
                     )
                 }
