@@ -23,6 +23,7 @@ import com.intellij.psi.PsiMember
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.util.PsiTreeUtil
 import org.jetbrains.kotlin.asJava.toLightClass
+import org.jetbrains.kotlin.idea.project.isHMPPEnabled
 import org.jetbrains.kotlin.idea.util.ProjectRootsUtil
 import org.jetbrains.kotlin.psi.KtClass
 import org.jetbrains.kotlin.psi.KtFile
@@ -35,11 +36,20 @@ class KotlinJUnitRunConfigurationProducer : RunConfigurationProducer<JUnitConfig
         return other.isProducedBy(JUnitConfigurationProducer::class.java) || other.isProducedBy(AbstractPatternBasedConfigurationProducer::class.java)
     }
 
+    private fun isAvailableInHMpp(context: ConfigurationContext): Boolean {
+        val module = context.module
+        return module == null || !module.isHMPPEnabled || !forceGradleRunnerInHMPP()
+    }
+
     override fun isConfigurationFromContext(
         configuration: JUnitConfiguration,
         context: ConfigurationContext
     ): Boolean {
         if (getInstance(PatternConfigurationProducer::class.java).isMultipleElementsSelected(context)) {
+            return false
+        }
+
+        if (!isAvailableInHMpp(context)) {
             return false
         }
 
@@ -74,6 +84,10 @@ class KotlinJUnitRunConfigurationProducer : RunConfigurationProducer<JUnitConfig
         sourceElement: Ref<PsiElement>
     ): Boolean {
         if (DumbService.getInstance(context.project).isDumb) return false
+
+        if (!isAvailableInHMpp(context)) {
+            return false
+        }
 
         val location = context.location ?: return false
         val leaf = location.psiElement
