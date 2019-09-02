@@ -469,13 +469,17 @@ public actual fun String.compareTo(other: String, ignoreCase: Boolean = false): 
 }
 
 /**
- * Returns `true` if this string is equal to the contents of the specified CharSequence.
+ * Returns `true` if this string is equal to the contents of the specified [CharSequence], `false` otherwise.
+ *
+ * This method does not synchronize on the specified [CharSequence] and the caller is responsible for the thread-safety.
  */
 @kotlin.internal.InlineOnly
 public inline fun String.contentEquals(charSequence: CharSequence): Boolean = (this as java.lang.String).contentEquals(charSequence)
 
 /**
- * Returns `true` if this string is equal to the contents of the specified StringBuffer.
+ * Returns `true` if this string is equal to the contents of the specified [StringBuffer], `false` otherwise.
+ *
+ * This method synchronizes on the specified [StringBuffer].
  */
 @kotlin.internal.InlineOnly
 public inline fun String.contentEquals(stringBuilder: StringBuffer): Boolean = (this as java.lang.String).contentEquals(stringBuilder)
