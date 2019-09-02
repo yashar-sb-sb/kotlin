@@ -19,6 +19,7 @@ import org.jetbrains.kotlin.idea.configuration.toModuleGroup
 import org.jetbrains.kotlin.idea.core.getSourceType
 import org.jetbrains.kotlin.idea.core.isAndroidModule
 import org.jetbrains.kotlin.idea.facet.KotlinFacet
+import org.jetbrains.kotlin.idea.project.isHMPPEnabled
 
 class KotlinMultiplatformRunLocationsProvider : MultipleRunLocationsProvider() {
     override fun getLocationDisplayName(locationCreatedFrom: Location<*>, originalLocation: Location<*>): String? {
@@ -28,6 +29,10 @@ class KotlinMultiplatformRunLocationsProvider : MultipleRunLocationsProvider() {
 
     override fun getAlternativeLocations(originalLocation: Location<*>): List<Location<*>> {
         val originalModule = originalLocation.module ?: return emptyList()
+        if (originalModule.isHMPPEnabled) {
+            return emptyList()
+        }
+
         val virtualFile = originalLocation.virtualFile ?: return emptyList()
         val sourceType = ModuleRootManager.getInstance(originalModule).fileIndex.getSourceType(virtualFile) ?: return emptyList()
         return modulesToRunFrom(originalModule, sourceType).map { PsiLocation(originalLocation.project, it, originalLocation.psiElement) }
