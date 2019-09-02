@@ -15,8 +15,6 @@ class DirtyFilesContainer(
 ) {
     private val myDirtyFiles = HashSet<File>()
 
-    fun asSet(): Set<File> = myDirtyFiles
-
     fun toMutableList(): MutableList<File> =
         ArrayList(myDirtyFiles)
 
@@ -51,9 +49,5 @@ class DirtyFilesContainer(
             mapClassesFqNamesToFiles(listOf(caches.platformCache), fqNamesWithSubtypes, reporter)
         // reason is null, because files are reported in mapClassesFqNamesToFiles
         add(dirtyFilesFromFqNames, reason = null)
-    }
-
-    fun clear() {
-        myDirtyFiles.clear()
     }
 }
