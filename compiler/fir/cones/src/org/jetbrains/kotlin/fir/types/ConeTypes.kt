@@ -194,3 +194,12 @@ class ConeIntersectionType(
 fun ConeIntersectionType.mapTypes(func: (ConeKotlinType) -> ConeKotlinType): ConeIntersectionType {
     return ConeIntersectionType(intersectedTypes.map(func))
 }
+
+class ConeStubType(val variable: TypeVariableMarker, override val nullability: ConeNullability) : StubTypeMarker, ConeKotlinType() {
+    override val typeArguments: Array<out ConeKotlinTypeProjection>
+        get() = emptyArray()
+
+    override fun toString(): String {
+        return "stub type: $variable"
+    }
+}

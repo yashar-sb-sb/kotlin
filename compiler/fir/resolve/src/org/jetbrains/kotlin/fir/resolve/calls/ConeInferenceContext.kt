@@ -213,7 +213,7 @@ interface ConeInferenceContext : TypeSystemInferenceExtensionContext,
     }
 
     override fun createStubType(typeVariable: TypeVariableMarker): StubTypeMarker {
-        TODO("not implemented")
+        return ConeStubType(typeVariable, ConeNullability.create(typeVariable.defaultType().isMarkedNullable()))
     }
 
     override fun KotlinTypeMarker.removeAnnotations(): KotlinTypeMarker {
