@@ -21,6 +21,7 @@ import org.jetbrains.kotlin.idea.debugger.evaluate.compilation.CodeFragmentParam
 import org.jetbrains.kotlin.idea.debugger.evaluate.KotlinCodeFragmentFactory.Companion.FAKE_JAVA_CONTEXT_FUNCTION_NAME
 import org.jetbrains.kotlin.idea.debugger.safeLocation
 import org.jetbrains.kotlin.idea.debugger.safeMethod
+import org.jetbrains.kotlin.idea.refactoring.fqName.fqName
 import org.jetbrains.kotlin.idea.util.application.runReadAction
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.*
@@ -195,6 +196,13 @@ class CodeFragmentParameterAnalyzer(
                     if (descriptor is FunctionDescriptor && descriptor.isSuspend) {
                         evaluationStatus.error(EvaluationError.SuspendCall)
                         throw EvaluateExceptionUtil.createEvaluateException("Evaluation of 'suspend' calls is not supported")
+                    }
+                    val type = descriptor.containingDeclaration
+                    val typeName = if (type is TypeAliasDescriptor)
+                        type.classDescriptor?.fqNameSafe?.asString() // get root class (transitive for any amount of re-aliased aliases)
+                    else type.fqNameSafe.asString()
+                    if (descriptor is ConstructorDescriptor && typeName == "kotlin.Nothing") {
+                        throw EvaluateExceptionUtil.createEvaluateException("Type 'Nothing' can't be instantiated")
                     }
                 }
 
