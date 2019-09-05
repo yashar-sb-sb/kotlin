@@ -104,6 +104,11 @@ public class SmartStepIntoTestGenerated extends AbstractSmartStepIntoTest {
         runTest("idea/testData/debugger/smartStepInto/infixCall.kt");
     }
 
+    @TestMetadata("inlineOnly.kt")
+    public void testInlineOnly() throws Exception {
+        runTest("idea/testData/debugger/smartStepInto/inlineOnly.kt");
+    }
+
     @TestMetadata("inlinedFunLiteral.kt")
     public void testInlinedFunLiteral() throws Exception {
         runTest("idea/testData/debugger/smartStepInto/inlinedFunLiteral.kt");
