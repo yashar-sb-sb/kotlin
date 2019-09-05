@@ -46,7 +46,7 @@ abstract class AbstractKotlinMultiplatformTestMethodGradleConfigurationProducer 
 abstract class AbstractKotlinTestMethodGradleConfigurationProducer
     : TestMethodGradleConfigurationProducer(), KotlinGradleConfigurationProducer
 {
-    override fun isConfigurationFromContext(configuration: ExternalSystemRunConfiguration?, context: ConfigurationContext): Boolean {
+    override fun isConfigurationFromContext(configuration: ExternalSystemRunConfiguration, context: ConfigurationContext): Boolean {
         if (!context.check()) {
             return false
         }
@@ -55,7 +55,6 @@ abstract class AbstractKotlinTestMethodGradleConfigurationProducer
             return super.isConfigurationFromContext(configuration, context)
         }
 
-        if (configuration == null) return false
         if (GradleConstants.SYSTEM_ID != configuration.settings.externalSystemId) return false
         return doIsConfigurationFromContext(configuration, context)
     }
