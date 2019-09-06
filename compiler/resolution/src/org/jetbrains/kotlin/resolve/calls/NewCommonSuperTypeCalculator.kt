@@ -123,6 +123,12 @@ object NewCommonSuperTypeCalculator {
         return supertypes
     }
 
+    /*
+    * Common Supertype calculator works with proper types and stub types (which is a replacement for non-proper types)
+    * Also, there are two invariant related to stub types:
+    *  - resulting type should be only proper type
+    *  - one of the input types is definitely proper type
+    * */
     private fun TypeSystemCommonSuperTypesContext.commonSuperTypeForNotNullTypes(
         types: List<SimpleTypeMarker>,
         depth: Int
