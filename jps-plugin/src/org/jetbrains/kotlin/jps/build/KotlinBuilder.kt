@@ -27,7 +27,6 @@ import org.jetbrains.jps.builders.storage.BuildDataCorruptedException
 import org.jetbrains.jps.incremental.*
 import org.jetbrains.jps.incremental.ModuleLevelBuilder.ExitCode.*
 import org.jetbrains.jps.incremental.java.JavaBuilder
-import org.jetbrains.jps.incremental.storage.BuildDataManager
 import org.jetbrains.jps.model.JpsProject
 import org.jetbrains.kotlin.build.GeneratedFile
 import org.jetbrains.kotlin.cli.common.ExitCode
@@ -35,7 +34,6 @@ import org.jetbrains.kotlin.cli.common.arguments.CommonCompilerArguments
 import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSeverity
 import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSeverity.*
 import org.jetbrains.kotlin.cli.common.messages.MessageCollectorUtil
-import org.jetbrains.kotlin.cli.common.toBooleanLenient
 import org.jetbrains.kotlin.compilerRunner.*
 import org.jetbrains.kotlin.config.IncrementalCompilation
 import org.jetbrains.kotlin.config.KotlinModuleKind
@@ -47,6 +45,7 @@ import org.jetbrains.kotlin.incremental.components.LookupTracker
 import org.jetbrains.kotlin.incremental.ICReporterBase
 import org.jetbrains.kotlin.jps.incremental.JpsIncrementalCache
 import org.jetbrains.kotlin.jps.incremental.JpsLookupStorageManager
+import org.jetbrains.kotlin.jps.model.k2JvmCompilerArguments
 import org.jetbrains.kotlin.jps.model.kotlinKind
 import org.jetbrains.kotlin.jps.targets.KotlinJvmModuleBuildTarget
 import org.jetbrains.kotlin.jps.targets.KotlinModuleBuildTarget
@@ -55,7 +54,6 @@ import org.jetbrains.kotlin.preloading.ClassCondition
 import org.jetbrains.kotlin.utils.KotlinPaths
 import org.jetbrains.kotlin.utils.KotlinPathsFromHomeDir
 import org.jetbrains.kotlin.utils.PathUtil
-import org.jetbrains.org.objectweb.asm.ClassReader
 import java.io.File
 import java.util.*
 import kotlin.collections.HashSet
@@ -326,6 +324,11 @@ class KotlinBuilder : ModuleLevelBuilder(BuilderCategory.SOURCE_PROCESSOR) {
         outputConsumer: OutputConsumer,
         fsOperations: FSOperationsHelper
     ): ModuleLevelBuilder.ExitCode {
+        val switchOffJavaBuilder = chunk.representativeTarget().module.k2JvmCompilerArguments.let { it.useJavac && it.compileJava }
+        if (switchOffJavaBuilder) {
+            JavaBuilder.IS_ENABLED[context] = true
+        }
+
         // Workaround for Android Studio
         if (representativeTarget is KotlinJvmModuleBuildTarget && !JavaBuilder.IS_ENABLED[context, true]) {
             messageCollector.report(INFO, "Kotlin JPS plugin is disabled")
@@ -455,6 +458,9 @@ class KotlinBuilder : ModuleLevelBuilder(BuilderCategory.SOURCE_PROCESSOR) {
         )
 
         if (!representativeTarget.isIncrementalCompilationEnabled) {
+            if (switchOffJavaBuilder) {
+                JavaBuilder.IS_ENABLED[context] = false
+            }
             return OK
         }
 
@@ -488,6 +494,9 @@ class KotlinBuilder : ModuleLevelBuilder(BuilderCategory.SOURCE_PROCESSOR) {
             }
         }
 
+        if (switchOffJavaBuilder) {
+            JavaBuilder.IS_ENABLED[context] = false
+        }
         return OK
     }
 
