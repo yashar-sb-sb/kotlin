@@ -120,24 +120,20 @@ class ResultTypeResolver(
     }
 
     private fun Context.prepareLowerConstraints(constraints: List<Constraint>): List<KotlinTypeMarker> {
-        val types = constraints.mapNotNull { if (it.kind == ConstraintKind.LOWER) it.type else null }
+        var notFixedToStubTypesSubstitutor: TypeSubstitutorMarker? = null
+        return constraints.mapNotNull { constraint ->
+            if (constraint.kind != ConstraintKind.LOWER) return@mapNotNull null
 
-        var atLeastOneProper = false
-        var atLeastOneNonProper = false
+            val constraintType = constraint.type
 
-        for (type in types) {
-            if (isProperType(type))
-                atLeastOneProper = true
-            else
-                atLeastOneNonProper = true
+            if (isProperType(constraintType)) return@mapNotNull constraintType
+
+            if (notFixedToStubTypesSubstitutor == null) {
+                notFixedToStubTypesSubstitutor = buildNotFixedVariablesToStubTypesSubstitutor()
+            }
+
+            notFixedToStubTypesSubstitutor?.safeSubstitute(constraintType)
         }
-
-        if (!atLeastOneProper) return emptyList()
-        if (!atLeastOneNonProper) return types
-
-        val notFixedToStubTypesSubstitutor = buildNotFixedVariablesToStubTypesSubstitutor()
-
-        return types.map { notFixedToStubTypesSubstitutor.safeSubstitute(it) }
     }
 
     private fun Context.sinkIntegerLiteralTypes(types: List<KotlinTypeMarker>): List<KotlinTypeMarker> {
