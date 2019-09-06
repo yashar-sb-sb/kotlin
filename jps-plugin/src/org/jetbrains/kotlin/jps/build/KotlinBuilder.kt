@@ -367,6 +367,9 @@ class KotlinBuilder : ModuleLevelBuilder(BuilderCategory.SOURCE_PROCESSOR) {
             targets.forEach { kotlinContext.rebuildAfterCacheVersionChanged.clean(it) }
             return NOTHING_DONE
         }
+        if (switchOffJavaBuilder) {
+            JavaBuilder.IS_ENABLED[context] = false
+        }
 
         // Request CHUNK_REBUILD when IC is off and there are dirty Kotlin files
         // Otherwise unexpected compile error might happen, when there are Groovy files,
@@ -458,9 +461,6 @@ class KotlinBuilder : ModuleLevelBuilder(BuilderCategory.SOURCE_PROCESSOR) {
         )
 
         if (!representativeTarget.isIncrementalCompilationEnabled) {
-            if (switchOffJavaBuilder) {
-                JavaBuilder.IS_ENABLED[context] = false
-            }
             return OK
         }
 
@@ -494,9 +494,6 @@ class KotlinBuilder : ModuleLevelBuilder(BuilderCategory.SOURCE_PROCESSOR) {
             }
         }
 
-        if (switchOffJavaBuilder) {
-            JavaBuilder.IS_ENABLED[context] = false
-        }
         return OK
     }
 
