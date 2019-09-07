@@ -209,7 +209,9 @@ abstract class BaseGradleIT {
         val withBuildCache: Boolean = false,
         val kaptOptions: KaptOptions? = null,
         val parallelTasksInProject: Boolean? = null
-    )
+    ) {
+        val gradleJvmArgs: String = "-Xmx1024m -ea"
+    }
 
     data class KaptOptions(val verbose: Boolean, val useWorkers: Boolean, val incrementalKapt: Boolean = false, val includeCompileClasspath: Boolean = true)
 
@@ -740,6 +742,8 @@ abstract class BaseGradleIT {
             options.parallelTasksInProject?.let {
                 add("-Pkotlin.parallel.tasks.in.project=$it")
             }
+
+            add("-Dorg.gradle.jvmargs=${options.gradleJvmArgs}")
 
             // Workaround: override a console type set in the user machine gradle.properties (since Gradle 4.3):
             add("--console=plain")
