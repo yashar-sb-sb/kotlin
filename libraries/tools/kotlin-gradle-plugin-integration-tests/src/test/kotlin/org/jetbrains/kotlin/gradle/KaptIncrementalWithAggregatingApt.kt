@@ -11,7 +11,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import kotlin.test.assertFalse
 
-class KaptIncrementalWithAggregatingApt : KaptIncrementalIT() {
+open class KaptIncrementalWithAggregatingApt : KaptIncrementalIT() {
 
     override fun getProject() =
         Project(

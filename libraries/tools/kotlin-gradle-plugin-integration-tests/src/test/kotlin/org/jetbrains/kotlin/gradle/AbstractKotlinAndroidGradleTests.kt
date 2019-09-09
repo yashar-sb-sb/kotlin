@@ -391,7 +391,7 @@ open class KotlinAndroid32GradleIT : KotlinAndroid3GradleIT() {
     }
 }
 
-class KotlinAndroid30GradleIT : KotlinAndroid3GradleIT() {
+open class KotlinAndroid30GradleIT : KotlinAndroid3GradleIT() {
     override val androidGradlePluginVersion: AGPVersion
         get() = AGPVersion.v3_0_0
 
@@ -401,7 +401,7 @@ class KotlinAndroid30GradleIT : KotlinAndroid3GradleIT() {
     @Test
     fun testOmittedStdlibVersion() = Project(
         "AndroidProject",
-        defaultGradleVersion.maxVersion?.let { GradleVersionRequired.InRange("4.4", it) } ?: GradleVersionRequired.AtLeast("4.4")
+        GradleVersionRequired.InRange("4.4", defaultGradleVersion.maxVersion)
     ).run {
         setupWorkingDir()
 

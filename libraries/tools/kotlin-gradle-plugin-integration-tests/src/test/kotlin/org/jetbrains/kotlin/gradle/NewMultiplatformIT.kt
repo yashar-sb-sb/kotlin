@@ -50,7 +50,7 @@ fun configure(): NativeTargets {
     return NativeTargets(current, supported, unsupported)
 }
 
-class NewMultiplatformIT : BaseGradleIT() {
+open class NewMultiplatformIT : BaseGradleIT() {
     val gradleVersion = GradleVersionRequired.AtLeast("4.7")
 
     val nativeHostTargetName = configure().current

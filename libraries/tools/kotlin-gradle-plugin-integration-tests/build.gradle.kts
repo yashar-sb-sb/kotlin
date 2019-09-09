@@ -48,39 +48,7 @@ dependencies {
 val shortenTempRootName = System.getProperty("os.name")!!.contains("Windows")
 
 // additional configuration in tasks.withType<Test> below
-projectTest("test", shortenTempRootName = shortenTempRootName) {}
-
-projectTest("testAdvanceGradleVersion", shortenTempRootName = shortenTempRootName) {
-    val gradleVersionForTests = "5.3-rc-2"
-    systemProperty("kotlin.gradle.version.for.tests", gradleVersionForTests)
-}
-
-tasks.named<Task>("check") {
-    dependsOn("testAdvanceGradleVersion")
-}
-
-gradle.taskGraph.whenReady {
-    // Validate that all dependencies "install" tasks are added to "test" dependencies
-    // Test dependencies are specified as paths to avoid forcing dependency resolution
-    // and also to avoid specifying evaluationDependsOn for each testCompile dependency.
-
-    val notAddedTestTasks = hashSetOf<String>()
-    val test = tasks.getByName("test")
-    val testDependencies = test.dependsOn
-
-    for (dependency in configurations.getByName("testCompile").allDependencies) {
-        if (dependency !is ProjectDependency) continue
-
-        val task = dependency.dependencyProject.tasks.findByName("install")
-        if (task != null && !testDependencies.contains(task.path)) {
-            notAddedTestTasks.add("\"${task.path}\"")
-        }
-    }
-
-    if (!notAddedTestTasks.isEmpty()) {
-        throw GradleException("Add the following tasks to ${test.path} dependencies:\n  ${notAddedTestTasks.joinToString(",\n  ")}")
-    }
-}
+projectTest("test", shortenTempRootName = shortenTempRootName)
 
 tasks.withType<KotlinCompile> {
     kotlinOptions.jdkHome = rootProject.extra["JDK_18"] as String
@@ -161,5 +129,41 @@ tasks.withType<Test> {
             override fun afterTest(testDescriptor: TestDescriptor, result: TestResult) {}
             override fun beforeTest(testDescriptor: TestDescriptor) {}
         })
+    }
+}
+
+sourceSets {
+    "test" {
+        java {
+            srcDir("src/generatedTest")
+        }
+    }
+}
+
+
+val generateTests by generator("org.jetbrains.kotlin.gradle.generators.GenerateTestsWithAdvancedVersionKt")
+
+testsJar {  }
+
+gradle.taskGraph.whenReady {
+    // Validate that all dependencies "install" tasks are added to "test" dependencies
+    // Test dependencies are specified as paths to avoid forcing dependency resolution
+    // and also to avoid specifying evaluationDependsOn for each testCompile dependency.
+
+    val notAddedTestTasks = hashSetOf<String>()
+    val test = tasks.getByName("test")
+    val testDependencies = test.dependsOn
+
+    for (dependency in configurations.getByName("testCompile").allDependencies) {
+        if (dependency !is ProjectDependency) continue
+
+        val task = dependency.dependencyProject.tasks.findByName("install")
+        if (task != null && !testDependencies.contains(task.path)) {
+            notAddedTestTasks.add("\"${task.path}\"")
+        }
+    }
+
+    if (!notAddedTestTasks.isEmpty()) {
+        throw GradleException("Add the following tasks to ${test.path} dependencies:\n  ${notAddedTestTasks.joinToString(",\n  ")}")
     }
 }

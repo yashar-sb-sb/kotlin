@@ -15,7 +15,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 
-class KotlinProjectIT : BaseGradleIT() {
+open class KotlinProjectIT : BaseGradleIT() {
     override val defaultGradleVersion: GradleVersionRequired
         get() = GradleVersionRequired.AtLeast("4.4")
 
