@@ -306,9 +306,11 @@ abstract class CommonCompilerArguments : CommonToolArguments() {
 
     @Argument(
         value = "-Xapi-mode",
-        description = "Enable api mode, force compiler to report warnings an all public API declarations without explicit visibility"
+        valueDescription = "{enable|disable|migration}",
+        description = "Enable api mode, force compiler to report errors an all public API declarations without explicit visibility.\n" +
+                "Use 'migration' level to issue warnings instead of errors."
     )
-    var apiMode: Boolean by FreezableVar(false)
+    var apiMode: String by FreezableVar(ApiMode.DISABLED.state)
 
     open fun configureAnalysisFlags(collector: MessageCollector): MutableMap<AnalysisFlag<*>, Any> {
         return HashMap<AnalysisFlag<*>, Any>().apply {
@@ -319,7 +321,10 @@ abstract class CommonCompilerArguments : CommonToolArguments() {
             put(AnalysisFlags.useExperimental, useExperimental?.toList().orEmpty())
             put(AnalysisFlags.explicitApiVersion, apiVersion != null)
             put(AnalysisFlags.allowResultReturnType, allowResultReturnType)
-            put(AnalysisFlags.apiMode, apiMode)
+            ApiMode.fromString(apiMode)?.let { put(AnalysisFlags.apiMode, it) } ?: collector.report(
+                CompilerMessageSeverity.ERROR,
+                "Unknown value for parameter -Xapi-mode. Value should be one of ${ApiMode.availableValues()}"
+            )
         }
     }
 
