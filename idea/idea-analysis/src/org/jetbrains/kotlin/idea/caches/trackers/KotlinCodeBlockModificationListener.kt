@@ -185,6 +185,10 @@ class KotlinCodeBlockModificationListener(
                     }
                 }
 
+                is KtClassInitializer -> {
+                    return blockDeclaration
+                }
+
                 is KtProperty -> {
                     if (blockDeclaration.typeReference != null) {
                         for (accessor in blockDeclaration.accessors) {
@@ -215,6 +219,7 @@ class KotlinCodeBlockModificationListener(
 
         private val BLOCK_DECLARATION_TYPES = arrayOf<Class<out KtDeclaration>>(
             KtProperty::class.java,
+            KtClassInitializer::class.java,
             KtNamedFunction::class.java,
             KtScriptInitializer::class.java
         )
