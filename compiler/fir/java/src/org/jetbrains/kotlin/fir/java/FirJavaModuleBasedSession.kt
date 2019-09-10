@@ -13,6 +13,8 @@ import org.jetbrains.kotlin.analyzer.ModuleInfo
 import org.jetbrains.kotlin.fir.*
 import org.jetbrains.kotlin.fir.java.deserialization.KotlinDeserializedJvmSymbolsProvider
 import org.jetbrains.kotlin.fir.resolve.FirProvider
+import org.jetbrains.kotlin.fir.resolve.FirSamResolver
+import org.jetbrains.kotlin.fir.resolve.FirSamResolverImpl
 import org.jetbrains.kotlin.fir.resolve.FirSymbolProvider
 import org.jetbrains.kotlin.fir.resolve.impl.FirCompositeSymbolProvider
 import org.jetbrains.kotlin.fir.resolve.impl.FirDependenciesSymbolProviderImpl
@@ -54,6 +56,8 @@ class FirJavaModuleBasedSession(
             FirCorrespondingSupertypesCache::class,
             FirCorrespondingSupertypesCache(this)
         )
+
+        registerComponent(FirSamResolver::class, FirSamResolverImpl(this))
 
         Extensions.getArea(sessionProvider.project)
             .getExtensionPoint(PsiElementFinder.EP_NAME)

@@ -13,6 +13,8 @@ import org.jetbrains.kotlin.fir.builder.RawFirBuilder
 import org.jetbrains.kotlin.fir.java.FirProjectSessionProvider
 import org.jetbrains.kotlin.fir.java.JavaSymbolProvider
 import org.jetbrains.kotlin.fir.resolve.FirProvider
+import org.jetbrains.kotlin.fir.resolve.FirSamResolver
+import org.jetbrains.kotlin.fir.resolve.FirSamResolverImpl
 import org.jetbrains.kotlin.fir.resolve.FirSymbolProvider
 import org.jetbrains.kotlin.fir.resolve.impl.FirCompositeSymbolProvider
 import org.jetbrains.kotlin.fir.resolve.impl.FirDependenciesSymbolProviderImpl
@@ -45,6 +47,8 @@ class FirIdeJavaModuleBasedSession(
                 )
             ) as FirSymbolProvider
         )
+
+        registerComponent(FirSamResolver::class, FirSamResolverImpl(this))
 
         registerComponent(
             FirCorrespondingSupertypesCache::class,
