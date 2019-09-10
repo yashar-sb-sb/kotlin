@@ -23,10 +23,7 @@ import com.sun.jdi.ClassLoaderReference
 import com.sun.jdi.ClassType
 import org.jetbrains.kotlin.idea.debugger.evaluate.ExecutionContext
 import org.jetbrains.kotlin.idea.debugger.isDexDebug
-import org.jetbrains.org.objectweb.asm.ClassReader
-import org.jetbrains.org.objectweb.asm.ClassVisitor
-import org.jetbrains.org.objectweb.asm.ClassWriter
-import org.jetbrains.org.objectweb.asm.Opcodes
+import org.jetbrains.org.objectweb.asm.*
 
 class OrdinaryClassLoadingAdapter : ClassLoadingAdapter {
     private companion object {
@@ -39,6 +36,7 @@ class OrdinaryClassLoadingAdapter : ClassLoadingAdapter {
         // Copied from com.intellij.debugger.ui.impl.watch.CompilingEvaluator.changeSuperToMagicAccessor
         fun changeSuperToMagicAccessor(bytes: ByteArray): ByteArray {
             val classWriter = ClassWriter(0)
+            var funSignature: String? = null
             val classVisitor = object : ClassVisitor(Opcodes.API_VERSION, classWriter) {
                 override fun visit(
                     version: Int,
@@ -52,11 +50,21 @@ class OrdinaryClassLoadingAdapter : ClassLoadingAdapter {
                     if ("java/lang/Object" == newSuperName) {
                         newSuperName = "sun/reflect/MagicAccessorImpl"
                     }
-
+                    funSignature = signature
                     super.visit(version, access, name, signature, newSuperName, interfaces)
                 }
             }
-            ClassReader(bytes).accept(classVisitor, 0)
+            val reader = ClassReader(bytes)
+            reader.accept(classVisitor, 0)
+            // create toString() for generated Lambda subtype
+            if (reader.superName == "kotlin/jvm/internal/Lambda")
+                classVisitor.visitMethod(Opcodes.ACC_PUBLIC, "toString", "()Ljava/lang/String;", null, null).apply {
+                    visitCode()
+                    visitLdcInsn(funSignature?.substringAfter("Lkotlin/jvm/internal/Lambda;Lkotlin/jvm/functions/"))
+                    visitInsn(Opcodes.ARETURN)
+                    visitMaxs(1, 1)
+                    visitEnd()
+                }
             return classWriter.toByteArray()
         }
 
