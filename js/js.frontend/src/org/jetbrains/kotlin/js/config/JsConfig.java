@@ -27,10 +27,12 @@ import kotlin.collections.CollectionsKt;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.kotlin.config.*;
+import org.jetbrains.kotlin.descriptors.ModuleDescriptor;
 import org.jetbrains.kotlin.descriptors.PackageFragmentProvider;
 import org.jetbrains.kotlin.descriptors.impl.ModuleDescriptorImpl;
 import org.jetbrains.kotlin.incremental.components.LookupTracker;
 import org.jetbrains.kotlin.js.resolve.JsPlatformAnalyzerServices;
+import org.jetbrains.kotlin.modules.Module;
 import org.jetbrains.kotlin.name.Name;
 import org.jetbrains.kotlin.resolve.CompilerDeserializationConfiguration;
 import org.jetbrains.kotlin.serialization.js.*;
@@ -97,6 +99,24 @@ public class JsConfig {
     @NotNull
     public String getModuleId() {
         return configuration.getNotNull(CommonConfigurationKeys.MODULE_NAME);
+    }
+
+    @NotNull
+    public String getRequireKey() {
+        String result = configuration.get(JSConfigurationKeys.REQUIRE_KEY);
+        if (result == null) return getModuleId();
+        return result;
+    }
+
+    private final Map<ModuleDescriptor, String> requireKeyMap = new HashMap<>();
+
+    @NotNull
+    public String getRequireKey(@NotNull ModuleDescriptor module) {
+        String result = requireKeyMap.get(module);
+        if (result == null) {
+            throw new IllegalStateException("Unknown module " + module.getName().asString());
+        }
+        return result;
     }
 
     @NotNull
@@ -244,7 +264,9 @@ public class JsConfig {
     private List<ModuleDescriptorImpl> createModuleDescriptors() {
         List<ModuleDescriptorImpl> moduleDescriptors = new SmartList<>();
         for (KotlinJavascriptMetadata metadataEntry : metadata) {
-            moduleDescriptors.add(createModuleDescriptor(metadataEntry));
+            ModuleDescriptorImpl moduleDescriptor = createModuleDescriptor(metadataEntry);
+            moduleDescriptors.add(moduleDescriptor);
+            requireKeyMap.put(moduleDescriptor, metadataEntry.getRequireKey());
         }
 
         if (metadataCache != null) {
@@ -263,6 +285,7 @@ public class JsConfig {
 
                 moduleDescriptor.initialize(provider);
                 moduleDescriptors.add(moduleDescriptor);
+                requireKeyMap.put(moduleDescriptor, cached.getRequireKey());
             }
         }
 

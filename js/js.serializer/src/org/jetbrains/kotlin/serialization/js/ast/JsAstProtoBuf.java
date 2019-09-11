@@ -712,578 +712,6 @@ public final class JsAstProtoBuf {
     // @@protoc_insertion_point(class_scope:org.jetbrains.kotlin.serialization.js.ast.Location)
   }
 
-  public interface JsImportedModuleOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:org.jetbrains.kotlin.serialization.js.ast.JsImportedModule)
-      org.jetbrains.kotlin.protobuf.MessageLiteOrBuilder {
-
-    /**
-     * <code>required int32 external_name = 1;</code>
-     */
-    boolean hasExternalName();
-    /**
-     * <code>required int32 external_name = 1;</code>
-     */
-    int getExternalName();
-
-    /**
-     * <code>required int32 internal_name = 2;</code>
-     */
-    boolean hasInternalName();
-    /**
-     * <code>required int32 internal_name = 2;</code>
-     */
-    int getInternalName();
-
-    /**
-     * <code>optional .org.jetbrains.kotlin.serialization.js.ast.Expression plain_reference = 3;</code>
-     */
-    boolean hasPlainReference();
-    /**
-     * <code>optional .org.jetbrains.kotlin.serialization.js.ast.Expression plain_reference = 3;</code>
-     */
-    org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.Expression getPlainReference();
-  }
-  /**
-   * Protobuf type {@code org.jetbrains.kotlin.serialization.js.ast.JsImportedModule}
-   */
-  public static final class JsImportedModule extends
-      org.jetbrains.kotlin.protobuf.GeneratedMessageLite implements
-      // @@protoc_insertion_point(message_implements:org.jetbrains.kotlin.serialization.js.ast.JsImportedModule)
-      JsImportedModuleOrBuilder {
-    // Use JsImportedModule.newBuilder() to construct.
-    private JsImportedModule(org.jetbrains.kotlin.protobuf.GeneratedMessageLite.Builder builder) {
-      super(builder);
-      this.unknownFields = builder.getUnknownFields();
-    }
-    private JsImportedModule(boolean noInit) { this.unknownFields = org.jetbrains.kotlin.protobuf.ByteString.EMPTY;}
-
-    private static final JsImportedModule defaultInstance;
-    public static JsImportedModule getDefaultInstance() {
-      return defaultInstance;
-    }
-
-    public JsImportedModule getDefaultInstanceForType() {
-      return defaultInstance;
-    }
-
-    private final org.jetbrains.kotlin.protobuf.ByteString unknownFields;
-    private JsImportedModule(
-        org.jetbrains.kotlin.protobuf.CodedInputStream input,
-        org.jetbrains.kotlin.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws org.jetbrains.kotlin.protobuf.InvalidProtocolBufferException {
-      initFields();
-      int mutable_bitField0_ = 0;
-      org.jetbrains.kotlin.protobuf.ByteString.Output unknownFieldsOutput =
-          org.jetbrains.kotlin.protobuf.ByteString.newOutput();
-      org.jetbrains.kotlin.protobuf.CodedOutputStream unknownFieldsCodedOutput =
-          org.jetbrains.kotlin.protobuf.CodedOutputStream.newInstance(
-              unknownFieldsOutput, 1);
-      try {
-        boolean done = false;
-        while (!done) {
-          int tag = input.readTag();
-          switch (tag) {
-            case 0:
-              done = true;
-              break;
-            default: {
-              if (!parseUnknownField(input, unknownFieldsCodedOutput,
-                                     extensionRegistry, tag)) {
-                done = true;
-              }
-              break;
-            }
-            case 8: {
-              bitField0_ |= 0x00000001;
-              externalName_ = input.readInt32();
-              break;
-            }
-            case 16: {
-              bitField0_ |= 0x00000002;
-              internalName_ = input.readInt32();
-              break;
-            }
-            case 26: {
-              org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.Expression.Builder subBuilder = null;
-              if (((bitField0_ & 0x00000004) == 0x00000004)) {
-                subBuilder = plainReference_.toBuilder();
-              }
-              plainReference_ = input.readMessage(org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.Expression.PARSER, extensionRegistry);
-              if (subBuilder != null) {
-                subBuilder.mergeFrom(plainReference_);
-                plainReference_ = subBuilder.buildPartial();
-              }
-              bitField0_ |= 0x00000004;
-              break;
-            }
-          }
-        }
-      } catch (org.jetbrains.kotlin.protobuf.InvalidProtocolBufferException e) {
-        throw e.setUnfinishedMessage(this);
-      } catch (java.io.IOException e) {
-        throw new org.jetbrains.kotlin.protobuf.InvalidProtocolBufferException(
-            e.getMessage()).setUnfinishedMessage(this);
-      } finally {
-        try {
-          unknownFieldsCodedOutput.flush();
-        } catch (java.io.IOException e) {
-        // Should not happen
-        } finally {
-          unknownFields = unknownFieldsOutput.toByteString();
-        }
-        makeExtensionsImmutable();
-      }
-    }
-    public static org.jetbrains.kotlin.protobuf.Parser<JsImportedModule> PARSER =
-        new org.jetbrains.kotlin.protobuf.AbstractParser<JsImportedModule>() {
-      public JsImportedModule parsePartialFrom(
-          org.jetbrains.kotlin.protobuf.CodedInputStream input,
-          org.jetbrains.kotlin.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws org.jetbrains.kotlin.protobuf.InvalidProtocolBufferException {
-        return new JsImportedModule(input, extensionRegistry);
-      }
-    };
-
-    @java.lang.Override
-    public org.jetbrains.kotlin.protobuf.Parser<JsImportedModule> getParserForType() {
-      return PARSER;
-    }
-
-    private int bitField0_;
-    public static final int EXTERNAL_NAME_FIELD_NUMBER = 1;
-    private int externalName_;
-    /**
-     * <code>required int32 external_name = 1;</code>
-     */
-    public boolean hasExternalName() {
-      return ((bitField0_ & 0x00000001) == 0x00000001);
-    }
-    /**
-     * <code>required int32 external_name = 1;</code>
-     */
-    public int getExternalName() {
-      return externalName_;
-    }
-
-    public static final int INTERNAL_NAME_FIELD_NUMBER = 2;
-    private int internalName_;
-    /**
-     * <code>required int32 internal_name = 2;</code>
-     */
-    public boolean hasInternalName() {
-      return ((bitField0_ & 0x00000002) == 0x00000002);
-    }
-    /**
-     * <code>required int32 internal_name = 2;</code>
-     */
-    public int getInternalName() {
-      return internalName_;
-    }
-
-    public static final int PLAIN_REFERENCE_FIELD_NUMBER = 3;
-    private org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.Expression plainReference_;
-    /**
-     * <code>optional .org.jetbrains.kotlin.serialization.js.ast.Expression plain_reference = 3;</code>
-     */
-    public boolean hasPlainReference() {
-      return ((bitField0_ & 0x00000004) == 0x00000004);
-    }
-    /**
-     * <code>optional .org.jetbrains.kotlin.serialization.js.ast.Expression plain_reference = 3;</code>
-     */
-    public org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.Expression getPlainReference() {
-      return plainReference_;
-    }
-
-    private void initFields() {
-      externalName_ = 0;
-      internalName_ = 0;
-      plainReference_ = org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.Expression.getDefaultInstance();
-    }
-    private byte memoizedIsInitialized = -1;
-    public final boolean isInitialized() {
-      byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
-
-      if (!hasExternalName()) {
-        memoizedIsInitialized = 0;
-        return false;
-      }
-      if (!hasInternalName()) {
-        memoizedIsInitialized = 0;
-        return false;
-      }
-      if (hasPlainReference()) {
-        if (!getPlainReference().isInitialized()) {
-          memoizedIsInitialized = 0;
-          return false;
-        }
-      }
-      memoizedIsInitialized = 1;
-      return true;
-    }
-
-    public void writeTo(org.jetbrains.kotlin.protobuf.CodedOutputStream output)
-                        throws java.io.IOException {
-      getSerializedSize();
-      if (((bitField0_ & 0x00000001) == 0x00000001)) {
-        output.writeInt32(1, externalName_);
-      }
-      if (((bitField0_ & 0x00000002) == 0x00000002)) {
-        output.writeInt32(2, internalName_);
-      }
-      if (((bitField0_ & 0x00000004) == 0x00000004)) {
-        output.writeMessage(3, plainReference_);
-      }
-      output.writeRawBytes(unknownFields);
-    }
-
-    private int memoizedSerializedSize = -1;
-    public int getSerializedSize() {
-      int size = memoizedSerializedSize;
-      if (size != -1) return size;
-
-      size = 0;
-      if (((bitField0_ & 0x00000001) == 0x00000001)) {
-        size += org.jetbrains.kotlin.protobuf.CodedOutputStream
-          .computeInt32Size(1, externalName_);
-      }
-      if (((bitField0_ & 0x00000002) == 0x00000002)) {
-        size += org.jetbrains.kotlin.protobuf.CodedOutputStream
-          .computeInt32Size(2, internalName_);
-      }
-      if (((bitField0_ & 0x00000004) == 0x00000004)) {
-        size += org.jetbrains.kotlin.protobuf.CodedOutputStream
-          .computeMessageSize(3, plainReference_);
-      }
-      size += unknownFields.size();
-      memoizedSerializedSize = size;
-      return size;
-    }
-
-    private static final long serialVersionUID = 0L;
-    @java.lang.Override
-    protected java.lang.Object writeReplace()
-        throws java.io.ObjectStreamException {
-      return super.writeReplace();
-    }
-
-    public static org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.JsImportedModule parseFrom(
-        org.jetbrains.kotlin.protobuf.ByteString data)
-        throws org.jetbrains.kotlin.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.JsImportedModule parseFrom(
-        org.jetbrains.kotlin.protobuf.ByteString data,
-        org.jetbrains.kotlin.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws org.jetbrains.kotlin.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.JsImportedModule parseFrom(byte[] data)
-        throws org.jetbrains.kotlin.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.JsImportedModule parseFrom(
-        byte[] data,
-        org.jetbrains.kotlin.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws org.jetbrains.kotlin.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.JsImportedModule parseFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      return PARSER.parseFrom(input);
-    }
-    public static org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.JsImportedModule parseFrom(
-        java.io.InputStream input,
-        org.jetbrains.kotlin.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return PARSER.parseFrom(input, extensionRegistry);
-    }
-    public static org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.JsImportedModule parseDelimitedFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      return PARSER.parseDelimitedFrom(input);
-    }
-    public static org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.JsImportedModule parseDelimitedFrom(
-        java.io.InputStream input,
-        org.jetbrains.kotlin.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return PARSER.parseDelimitedFrom(input, extensionRegistry);
-    }
-    public static org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.JsImportedModule parseFrom(
-        org.jetbrains.kotlin.protobuf.CodedInputStream input)
-        throws java.io.IOException {
-      return PARSER.parseFrom(input);
-    }
-    public static org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.JsImportedModule parseFrom(
-        org.jetbrains.kotlin.protobuf.CodedInputStream input,
-        org.jetbrains.kotlin.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return PARSER.parseFrom(input, extensionRegistry);
-    }
-
-    public static Builder newBuilder() { return Builder.create(); }
-    public Builder newBuilderForType() { return newBuilder(); }
-    public static Builder newBuilder(org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.JsImportedModule prototype) {
-      return newBuilder().mergeFrom(prototype);
-    }
-    public Builder toBuilder() { return newBuilder(this); }
-
-    /**
-     * Protobuf type {@code org.jetbrains.kotlin.serialization.js.ast.JsImportedModule}
-     */
-    public static final class Builder extends
-        org.jetbrains.kotlin.protobuf.GeneratedMessageLite.Builder<
-          org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.JsImportedModule, Builder>
-        implements
-        // @@protoc_insertion_point(builder_implements:org.jetbrains.kotlin.serialization.js.ast.JsImportedModule)
-        org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.JsImportedModuleOrBuilder {
-      // Construct using org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.JsImportedModule.newBuilder()
-      private Builder() {
-        maybeForceBuilderInitialization();
-      }
-
-      private void maybeForceBuilderInitialization() {
-      }
-      private static Builder create() {
-        return new Builder();
-      }
-
-      public Builder clear() {
-        super.clear();
-        externalName_ = 0;
-        bitField0_ = (bitField0_ & ~0x00000001);
-        internalName_ = 0;
-        bitField0_ = (bitField0_ & ~0x00000002);
-        plainReference_ = org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.Expression.getDefaultInstance();
-        bitField0_ = (bitField0_ & ~0x00000004);
-        return this;
-      }
-
-      public Builder clone() {
-        return create().mergeFrom(buildPartial());
-      }
-
-      public org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.JsImportedModule getDefaultInstanceForType() {
-        return org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.JsImportedModule.getDefaultInstance();
-      }
-
-      public org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.JsImportedModule build() {
-        org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.JsImportedModule result = buildPartial();
-        if (!result.isInitialized()) {
-          throw newUninitializedMessageException(result);
-        }
-        return result;
-      }
-
-      public org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.JsImportedModule buildPartial() {
-        org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.JsImportedModule result = new org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.JsImportedModule(this);
-        int from_bitField0_ = bitField0_;
-        int to_bitField0_ = 0;
-        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
-          to_bitField0_ |= 0x00000001;
-        }
-        result.externalName_ = externalName_;
-        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
-          to_bitField0_ |= 0x00000002;
-        }
-        result.internalName_ = internalName_;
-        if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
-          to_bitField0_ |= 0x00000004;
-        }
-        result.plainReference_ = plainReference_;
-        result.bitField0_ = to_bitField0_;
-        return result;
-      }
-
-      public Builder mergeFrom(org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.JsImportedModule other) {
-        if (other == org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.JsImportedModule.getDefaultInstance()) return this;
-        if (other.hasExternalName()) {
-          setExternalName(other.getExternalName());
-        }
-        if (other.hasInternalName()) {
-          setInternalName(other.getInternalName());
-        }
-        if (other.hasPlainReference()) {
-          mergePlainReference(other.getPlainReference());
-        }
-        setUnknownFields(
-            getUnknownFields().concat(other.unknownFields));
-        return this;
-      }
-
-      public final boolean isInitialized() {
-        if (!hasExternalName()) {
-          
-          return false;
-        }
-        if (!hasInternalName()) {
-          
-          return false;
-        }
-        if (hasPlainReference()) {
-          if (!getPlainReference().isInitialized()) {
-            
-            return false;
-          }
-        }
-        return true;
-      }
-
-      public Builder mergeFrom(
-          org.jetbrains.kotlin.protobuf.CodedInputStream input,
-          org.jetbrains.kotlin.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws java.io.IOException {
-        org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.JsImportedModule parsedMessage = null;
-        try {
-          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
-        } catch (org.jetbrains.kotlin.protobuf.InvalidProtocolBufferException e) {
-          parsedMessage = (org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.JsImportedModule) e.getUnfinishedMessage();
-          throw e;
-        } finally {
-          if (parsedMessage != null) {
-            mergeFrom(parsedMessage);
-          }
-        }
-        return this;
-      }
-      private int bitField0_;
-
-      private int externalName_ ;
-      /**
-       * <code>required int32 external_name = 1;</code>
-       */
-      public boolean hasExternalName() {
-        return ((bitField0_ & 0x00000001) == 0x00000001);
-      }
-      /**
-       * <code>required int32 external_name = 1;</code>
-       */
-      public int getExternalName() {
-        return externalName_;
-      }
-      /**
-       * <code>required int32 external_name = 1;</code>
-       */
-      public Builder setExternalName(int value) {
-        bitField0_ |= 0x00000001;
-        externalName_ = value;
-        
-        return this;
-      }
-      /**
-       * <code>required int32 external_name = 1;</code>
-       */
-      public Builder clearExternalName() {
-        bitField0_ = (bitField0_ & ~0x00000001);
-        externalName_ = 0;
-        
-        return this;
-      }
-
-      private int internalName_ ;
-      /**
-       * <code>required int32 internal_name = 2;</code>
-       */
-      public boolean hasInternalName() {
-        return ((bitField0_ & 0x00000002) == 0x00000002);
-      }
-      /**
-       * <code>required int32 internal_name = 2;</code>
-       */
-      public int getInternalName() {
-        return internalName_;
-      }
-      /**
-       * <code>required int32 internal_name = 2;</code>
-       */
-      public Builder setInternalName(int value) {
-        bitField0_ |= 0x00000002;
-        internalName_ = value;
-        
-        return this;
-      }
-      /**
-       * <code>required int32 internal_name = 2;</code>
-       */
-      public Builder clearInternalName() {
-        bitField0_ = (bitField0_ & ~0x00000002);
-        internalName_ = 0;
-        
-        return this;
-      }
-
-      private org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.Expression plainReference_ = org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.Expression.getDefaultInstance();
-      /**
-       * <code>optional .org.jetbrains.kotlin.serialization.js.ast.Expression plain_reference = 3;</code>
-       */
-      public boolean hasPlainReference() {
-        return ((bitField0_ & 0x00000004) == 0x00000004);
-      }
-      /**
-       * <code>optional .org.jetbrains.kotlin.serialization.js.ast.Expression plain_reference = 3;</code>
-       */
-      public org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.Expression getPlainReference() {
-        return plainReference_;
-      }
-      /**
-       * <code>optional .org.jetbrains.kotlin.serialization.js.ast.Expression plain_reference = 3;</code>
-       */
-      public Builder setPlainReference(org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.Expression value) {
-        if (value == null) {
-          throw new NullPointerException();
-        }
-        plainReference_ = value;
-
-        bitField0_ |= 0x00000004;
-        return this;
-      }
-      /**
-       * <code>optional .org.jetbrains.kotlin.serialization.js.ast.Expression plain_reference = 3;</code>
-       */
-      public Builder setPlainReference(
-          org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.Expression.Builder builderForValue) {
-        plainReference_ = builderForValue.build();
-
-        bitField0_ |= 0x00000004;
-        return this;
-      }
-      /**
-       * <code>optional .org.jetbrains.kotlin.serialization.js.ast.Expression plain_reference = 3;</code>
-       */
-      public Builder mergePlainReference(org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.Expression value) {
-        if (((bitField0_ & 0x00000004) == 0x00000004) &&
-            plainReference_ != org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.Expression.getDefaultInstance()) {
-          plainReference_ =
-            org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.Expression.newBuilder(plainReference_).mergeFrom(value).buildPartial();
-        } else {
-          plainReference_ = value;
-        }
-
-        bitField0_ |= 0x00000004;
-        return this;
-      }
-      /**
-       * <code>optional .org.jetbrains.kotlin.serialization.js.ast.Expression plain_reference = 3;</code>
-       */
-      public Builder clearPlainReference() {
-        plainReference_ = org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.Expression.getDefaultInstance();
-
-        bitField0_ = (bitField0_ & ~0x00000004);
-        return this;
-      }
-
-      // @@protoc_insertion_point(builder_scope:org.jetbrains.kotlin.serialization.js.ast.JsImportedModule)
-    }
-
-    static {
-      defaultInstance = new JsImportedModule(true);
-      defaultInstance.initFields();
-    }
-
-    // @@protoc_insertion_point(class_scope:org.jetbrains.kotlin.serialization.js.ast.JsImportedModule)
-  }
-
   public interface ExpressionOrBuilder extends
       // @@protoc_insertion_point(interface_extends:org.jetbrains.kotlin.serialization.js.ast.Expression)
       org.jetbrains.kotlin.protobuf.MessageLiteOrBuilder {
@@ -1325,13 +753,13 @@ public final class JsAstProtoBuf {
     org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.SideEffects getSideEffects();
 
     /**
-     * <code>optional .org.jetbrains.kotlin.serialization.js.ast.JsImportedModule local_alias = 5;</code>
+     * <code>optional .org.jetbrains.kotlin.serialization.js.ast.ImportedModule local_alias = 5;</code>
      */
     boolean hasLocalAlias();
     /**
-     * <code>optional .org.jetbrains.kotlin.serialization.js.ast.JsImportedModule local_alias = 5;</code>
+     * <code>optional .org.jetbrains.kotlin.serialization.js.ast.ImportedModule local_alias = 5;</code>
      */
-    org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.JsImportedModule getLocalAlias();
+    org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.ImportedModule getLocalAlias();
 
     /**
      * <code>optional int32 simple_name_reference = 22;</code>
@@ -1608,11 +1036,11 @@ public final class JsAstProtoBuf {
               break;
             }
             case 42: {
-              org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.JsImportedModule.Builder subBuilder = null;
+              org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.ImportedModule.Builder subBuilder = null;
               if (((bitField0_ & 0x00000010) == 0x00000010)) {
                 subBuilder = localAlias_.toBuilder();
               }
-              localAlias_ = input.readMessage(org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.JsImportedModule.PARSER, extensionRegistry);
+              localAlias_ = input.readMessage(org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.ImportedModule.PARSER, extensionRegistry);
               if (subBuilder != null) {
                 subBuilder.mergeFrom(localAlias_);
                 localAlias_ = subBuilder.buildPartial();
@@ -2025,17 +1453,17 @@ public final class JsAstProtoBuf {
     }
 
     public static final int LOCAL_ALIAS_FIELD_NUMBER = 5;
-    private org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.JsImportedModule localAlias_;
+    private org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.ImportedModule localAlias_;
     /**
-     * <code>optional .org.jetbrains.kotlin.serialization.js.ast.JsImportedModule local_alias = 5;</code>
+     * <code>optional .org.jetbrains.kotlin.serialization.js.ast.ImportedModule local_alias = 5;</code>
      */
     public boolean hasLocalAlias() {
       return ((bitField0_ & 0x00000010) == 0x00000010);
     }
     /**
-     * <code>optional .org.jetbrains.kotlin.serialization.js.ast.JsImportedModule local_alias = 5;</code>
+     * <code>optional .org.jetbrains.kotlin.serialization.js.ast.ImportedModule local_alias = 5;</code>
      */
-    public org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.JsImportedModule getLocalAlias() {
+    public org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.ImportedModule getLocalAlias() {
       return localAlias_;
     }
 
@@ -2401,7 +1829,7 @@ public final class JsAstProtoBuf {
       location_ = org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.Location.getDefaultInstance();
       synthetic_ = false;
       sideEffects_ = org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.SideEffects.AFFECTS_STATE;
-      localAlias_ = org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.JsImportedModule.getDefaultInstance();
+      localAlias_ = org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.ImportedModule.getDefaultInstance();
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -2807,7 +2235,7 @@ public final class JsAstProtoBuf {
         bitField0_ = (bitField0_ & ~0x00000004);
         sideEffects_ = org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.SideEffects.AFFECTS_STATE;
         bitField0_ = (bitField0_ & ~0x00000008);
-        localAlias_ = org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.JsImportedModule.getDefaultInstance();
+        localAlias_ = org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.ImportedModule.getDefaultInstance();
         bitField0_ = (bitField0_ & ~0x00000010);
         expressionCase_ = 0;
         expression_ = null;
@@ -3319,23 +2747,23 @@ public final class JsAstProtoBuf {
         return this;
       }
 
-      private org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.JsImportedModule localAlias_ = org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.JsImportedModule.getDefaultInstance();
+      private org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.ImportedModule localAlias_ = org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.ImportedModule.getDefaultInstance();
       /**
-       * <code>optional .org.jetbrains.kotlin.serialization.js.ast.JsImportedModule local_alias = 5;</code>
+       * <code>optional .org.jetbrains.kotlin.serialization.js.ast.ImportedModule local_alias = 5;</code>
        */
       public boolean hasLocalAlias() {
         return ((bitField0_ & 0x00000010) == 0x00000010);
       }
       /**
-       * <code>optional .org.jetbrains.kotlin.serialization.js.ast.JsImportedModule local_alias = 5;</code>
+       * <code>optional .org.jetbrains.kotlin.serialization.js.ast.ImportedModule local_alias = 5;</code>
        */
-      public org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.JsImportedModule getLocalAlias() {
+      public org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.ImportedModule getLocalAlias() {
         return localAlias_;
       }
       /**
-       * <code>optional .org.jetbrains.kotlin.serialization.js.ast.JsImportedModule local_alias = 5;</code>
+       * <code>optional .org.jetbrains.kotlin.serialization.js.ast.ImportedModule local_alias = 5;</code>
        */
-      public Builder setLocalAlias(org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.JsImportedModule value) {
+      public Builder setLocalAlias(org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.ImportedModule value) {
         if (value == null) {
           throw new NullPointerException();
         }
@@ -3345,23 +2773,23 @@ public final class JsAstProtoBuf {
         return this;
       }
       /**
-       * <code>optional .org.jetbrains.kotlin.serialization.js.ast.JsImportedModule local_alias = 5;</code>
+       * <code>optional .org.jetbrains.kotlin.serialization.js.ast.ImportedModule local_alias = 5;</code>
        */
       public Builder setLocalAlias(
-          org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.JsImportedModule.Builder builderForValue) {
+          org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.ImportedModule.Builder builderForValue) {
         localAlias_ = builderForValue.build();
 
         bitField0_ |= 0x00000010;
         return this;
       }
       /**
-       * <code>optional .org.jetbrains.kotlin.serialization.js.ast.JsImportedModule local_alias = 5;</code>
+       * <code>optional .org.jetbrains.kotlin.serialization.js.ast.ImportedModule local_alias = 5;</code>
        */
-      public Builder mergeLocalAlias(org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.JsImportedModule value) {
+      public Builder mergeLocalAlias(org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.ImportedModule value) {
         if (((bitField0_ & 0x00000010) == 0x00000010) &&
-            localAlias_ != org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.JsImportedModule.getDefaultInstance()) {
+            localAlias_ != org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.ImportedModule.getDefaultInstance()) {
           localAlias_ =
-            org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.JsImportedModule.newBuilder(localAlias_).mergeFrom(value).buildPartial();
+            org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.ImportedModule.newBuilder(localAlias_).mergeFrom(value).buildPartial();
         } else {
           localAlias_ = value;
         }
@@ -3370,10 +2798,10 @@ public final class JsAstProtoBuf {
         return this;
       }
       /**
-       * <code>optional .org.jetbrains.kotlin.serialization.js.ast.JsImportedModule local_alias = 5;</code>
+       * <code>optional .org.jetbrains.kotlin.serialization.js.ast.ImportedModule local_alias = 5;</code>
        */
       public Builder clearLocalAlias() {
-        localAlias_ = org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.JsImportedModule.getDefaultInstance();
+        localAlias_ = org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.ImportedModule.getDefaultInstance();
 
         bitField0_ = (bitField0_ & ~0x00000010);
         return this;
@@ -33371,6 +32799,15 @@ public final class JsAstProtoBuf {
      * <code>optional .org.jetbrains.kotlin.serialization.js.ast.Expression plain_reference = 3;</code>
      */
     org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.Expression getPlainReference();
+
+    /**
+     * <code>required int32 require_key = 4;</code>
+     */
+    boolean hasRequireKey();
+    /**
+     * <code>required int32 require_key = 4;</code>
+     */
+    int getRequireKey();
   }
   /**
    * Protobuf type {@code org.jetbrains.kotlin.serialization.js.ast.ImportedModule}
@@ -33443,6 +32880,11 @@ public final class JsAstProtoBuf {
                 plainReference_ = subBuilder.buildPartial();
               }
               bitField0_ |= 0x00000004;
+              break;
+            }
+            case 32: {
+              bitField0_ |= 0x00000008;
+              requireKey_ = input.readInt32();
               break;
             }
           }
@@ -33524,10 +32966,26 @@ public final class JsAstProtoBuf {
       return plainReference_;
     }
 
+    public static final int REQUIRE_KEY_FIELD_NUMBER = 4;
+    private int requireKey_;
+    /**
+     * <code>required int32 require_key = 4;</code>
+     */
+    public boolean hasRequireKey() {
+      return ((bitField0_ & 0x00000008) == 0x00000008);
+    }
+    /**
+     * <code>required int32 require_key = 4;</code>
+     */
+    public int getRequireKey() {
+      return requireKey_;
+    }
+
     private void initFields() {
       externalNameId_ = 0;
       internalNameId_ = 0;
       plainReference_ = org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.Expression.getDefaultInstance();
+      requireKey_ = 0;
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -33540,6 +32998,10 @@ public final class JsAstProtoBuf {
         return false;
       }
       if (!hasInternalNameId()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasRequireKey()) {
         memoizedIsInitialized = 0;
         return false;
       }
@@ -33565,6 +33027,9 @@ public final class JsAstProtoBuf {
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
         output.writeMessage(3, plainReference_);
       }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        output.writeInt32(4, requireKey_);
+      }
       output.writeRawBytes(unknownFields);
     }
 
@@ -33585,6 +33050,10 @@ public final class JsAstProtoBuf {
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
         size += org.jetbrains.kotlin.protobuf.CodedOutputStream
           .computeMessageSize(3, plainReference_);
+      }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        size += org.jetbrains.kotlin.protobuf.CodedOutputStream
+          .computeInt32Size(4, requireKey_);
       }
       size += unknownFields.size();
       memoizedSerializedSize = size;
@@ -33686,6 +33155,8 @@ public final class JsAstProtoBuf {
         bitField0_ = (bitField0_ & ~0x00000002);
         plainReference_ = org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.Expression.getDefaultInstance();
         bitField0_ = (bitField0_ & ~0x00000004);
+        requireKey_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000008);
         return this;
       }
 
@@ -33721,6 +33192,10 @@ public final class JsAstProtoBuf {
           to_bitField0_ |= 0x00000004;
         }
         result.plainReference_ = plainReference_;
+        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
+          to_bitField0_ |= 0x00000008;
+        }
+        result.requireKey_ = requireKey_;
         result.bitField0_ = to_bitField0_;
         return result;
       }
@@ -33736,6 +33211,9 @@ public final class JsAstProtoBuf {
         if (other.hasPlainReference()) {
           mergePlainReference(other.getPlainReference());
         }
+        if (other.hasRequireKey()) {
+          setRequireKey(other.getRequireKey());
+        }
         setUnknownFields(
             getUnknownFields().concat(other.unknownFields));
         return this;
@@ -33747,6 +33225,10 @@ public final class JsAstProtoBuf {
           return false;
         }
         if (!hasInternalNameId()) {
+          
+          return false;
+        }
+        if (!hasRequireKey()) {
           
           return false;
         }
@@ -33899,6 +33381,38 @@ public final class JsAstProtoBuf {
         plainReference_ = org.jetbrains.kotlin.serialization.js.ast.JsAstProtoBuf.Expression.getDefaultInstance();
 
         bitField0_ = (bitField0_ & ~0x00000004);
+        return this;
+      }
+
+      private int requireKey_ ;
+      /**
+       * <code>required int32 require_key = 4;</code>
+       */
+      public boolean hasRequireKey() {
+        return ((bitField0_ & 0x00000008) == 0x00000008);
+      }
+      /**
+       * <code>required int32 require_key = 4;</code>
+       */
+      public int getRequireKey() {
+        return requireKey_;
+      }
+      /**
+       * <code>required int32 require_key = 4;</code>
+       */
+      public Builder setRequireKey(int value) {
+        bitField0_ |= 0x00000008;
+        requireKey_ = value;
+        
+        return this;
+      }
+      /**
+       * <code>required int32 require_key = 4;</code>
+       */
+      public Builder clearRequireKey() {
+        bitField0_ = (bitField0_ & ~0x00000008);
+        requireKey_ = 0;
+        
         return this;
       }
 

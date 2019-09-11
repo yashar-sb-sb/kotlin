@@ -69,4 +69,7 @@ public class JSConfigurationKeys {
 
     public static final CompilerConfigurationKey<List<String>> FRIEND_PATHS =
             CompilerConfigurationKey.create("friend module paths");
+
+    public static final CompilerConfigurationKey<String> REQUIRE_KEY =
+            CompilerConfigurationKey.create("NPM require key");
 }

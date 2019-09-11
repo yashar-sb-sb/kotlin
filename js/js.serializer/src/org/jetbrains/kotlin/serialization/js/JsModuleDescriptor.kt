@@ -20,5 +20,6 @@ class JsModuleDescriptor<out T>(
     val name: String,
     val kind: ModuleKind,
     val imported: List<String>,
+    val requireKey: String,
     val data: T
 )

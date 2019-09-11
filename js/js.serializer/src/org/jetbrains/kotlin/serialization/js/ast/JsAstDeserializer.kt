@@ -64,7 +64,8 @@ class JsAstDeserializer(program: JsProgram, private val sourceRoots: Iterable<Fi
              JsImportedModule(
                     deserializeString(importedModuleProto.externalNameId),
                     deserializeName(importedModuleProto.internalNameId),
-                    if (importedModuleProto.hasPlainReference()) deserialize(importedModuleProto.plainReference) else null
+                    if (importedModuleProto.hasPlainReference()) deserialize(importedModuleProto.plainReference) else null,
+                    deserializeString(importedModuleProto.requireKey)
             )
         }
 
@@ -291,8 +292,13 @@ class JsAstDeserializer(program: JsProgram, private val sourceRoots: Iterable<Fi
         return expression
     }
 
-    private fun deserializeJsImportedModule(proto: JsAstProtoBuf.JsImportedModule): JsImportedModule {
-        return JsImportedModule(deserializeString(proto.externalName), deserializeName(proto.internalName), if (proto.hasPlainReference()) deserialize(proto.plainReference!!) else null)
+    private fun deserializeJsImportedModule(proto: ImportedModule): JsImportedModule {
+        return JsImportedModule(
+            deserializeString(proto.externalNameId),
+            deserializeName(proto.internalNameId),
+            if (proto.hasPlainReference()) deserialize(proto.plainReference!!) else null,
+            deserializeString(proto.requireKey)
+        )
     }
 
     private fun deserializeNoMetadata(proto: Expression): JsExpression = when (proto.expressionCase) {

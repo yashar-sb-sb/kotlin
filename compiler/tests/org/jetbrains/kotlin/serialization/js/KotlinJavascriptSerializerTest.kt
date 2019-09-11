@@ -78,6 +78,7 @@ class KotlinJavascriptSerializerTest : TestCaseWithTmpdir() {
             val analysisResult = TopDownAnalyzerFacadeForJS.analyzeFiles(files, config)
             val description = JsModuleDescriptor(
                     name = KotlinTestUtils.TEST_MODULE_NAME,
+                    requireKey = KotlinTestUtils.TEST_MODULE_NAME,
                     kind = ModuleKind.PLAIN,
                     imported = listOf(),
                     data = analysisResult.moduleDescriptor

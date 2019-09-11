@@ -206,7 +206,7 @@ class ImportIntoFragmentInliningScope private constructor(
     private fun addInlinedModule(module: JsImportedModule): JsName {
         return existingModules.computeIfAbsent(module.key) {
             // Copy so that the Merger.kt doesn't operate on the same instance in different fragments.
-            JsImportedModule(module.externalName, module.internalName, module.plainReference).also {
+            JsImportedModule(module.externalName, module.internalName, module.plainReference, module.requireKey).also {
                 fragment.importedModules.add(it)
             }
         }.internalName

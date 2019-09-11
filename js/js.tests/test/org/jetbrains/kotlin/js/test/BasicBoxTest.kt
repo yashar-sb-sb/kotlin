@@ -827,7 +827,7 @@ abstract class BasicBoxTest(
         val METADATA_CACHE = (JsConfig.JS_STDLIB + JsConfig.JS_KOTLIN_TEST).flatMap { path ->
             KotlinJavascriptMetadataUtils.loadMetadata(path).map { metadata ->
                 val parts = KotlinJavascriptSerializationUtil.readModuleAsProto(metadata.body, metadata.version)
-                JsModuleDescriptor(metadata.moduleName, parts.kind, parts.importedModules, parts)
+                JsModuleDescriptor(metadata.moduleName, parts.kind, parts.importedModules, metadata.moduleName, parts)
             }
         }
 

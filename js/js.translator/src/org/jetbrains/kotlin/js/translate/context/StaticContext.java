@@ -174,10 +174,10 @@ public final class StaticContext {
         this.rootScope = fragment.getScope();
         this.config = config;
         this.currentModule = moduleDescriptor;
-        this.currentModuleAsImported = new JsImportedModule(Namer.getRootPackageName(), rootScope.declareName(Namer.getRootPackageName()), null);
+        this.currentModuleAsImported = new JsImportedModule(Namer.getRootPackageName(), rootScope.declareName(Namer.getRootPackageName()), null, Namer.getRootPackageName());
 
         JsName kotlinName = rootScope.declareName(Namer.KOTLIN_NAME);
-        createImportedModule(new JsImportedModuleKey(Namer.KOTLIN_LOWER_NAME, null), Namer.KOTLIN_LOWER_NAME, kotlinName, null);
+        createImportedModule(new JsImportedModuleKey(Namer.KOTLIN_LOWER_NAME, null, Namer.KOTLIN_LOWER_NAME), kotlinName);
 
         classModelGenerator = new ClassModelGenerator(TranslationContext.rootContext(this));
         this.sourceFilePathResolver = sourceFilePathResolver;
@@ -318,7 +318,7 @@ public final class StaticContext {
         if (config.getModuleKind() != ModuleKind.PLAIN) {
             String moduleName = AnnotationsUtils.getModuleName(suggested.getDescriptor());
             if (moduleName != null) {
-                return JsAstUtils.pureFqn(getImportedModule(moduleName, suggested.getDescriptor()).getInternalName(), null);
+                return JsAstUtils.pureFqn(getImportedModule(moduleName, moduleName, suggested.getDescriptor()).getInternalName(), null);
             }
         }
 
@@ -340,7 +340,7 @@ public final class StaticContext {
         if (isNativeObject(suggested.getDescriptor()) && DescriptorUtils.isTopLevelDeclaration(suggested.getDescriptor())) {
             String fileModuleName = AnnotationsUtils.getFileModuleName(getBindingContext(), suggested.getDescriptor());
             if (fileModuleName != null) {
-                JsName moduleJsName = getImportedModule(fileModuleName, null).getInternalName();
+                JsName moduleJsName = getImportedModule(fileModuleName, fileModuleName, null).getInternalName();
                 expression = pureFqn(moduleJsName, expression);
             }
 
@@ -715,24 +715,27 @@ public final class StaticContext {
 
         if (UNKNOWN_EXTERNAL_MODULE_NAME.equals(moduleName)) return null;
 
-        return getImportedModule(moduleName, null);
+        String requireKey = config.getRequireKey(module);
+
+        return getImportedModule(moduleName, requireKey, null);
     }
 
     @NotNull
-    public JsImportedModule getImportedModule(@NotNull String baseName, @Nullable DeclarationDescriptor descriptor) {
+    public JsImportedModule getImportedModule(@NotNull String baseName, @NotNull String requireKey, @Nullable DeclarationDescriptor descriptor) {
         String plainName = descriptor != null && config.getModuleKind() == ModuleKind.UMD ? getPlainId(descriptor) : null;
-        JsImportedModuleKey key = new JsImportedModuleKey(baseName, plainName);
+        JsImportedModuleKey key = new JsImportedModuleKey(baseName, plainName, requireKey);
 
         JsImportedModule module = importedModules.get(key);
         if (module == null) {
             JsName internalName = JsScope.declareTemporaryName(Namer.LOCAL_MODULE_PREFIX + Namer.suggestedModuleName(baseName));
-            module = createImportedModule(key, baseName, internalName, plainName != null ? pureFqn(plainName, null) : null);
+            module = createImportedModule(key, internalName);
         }
         return module;
     }
 
-    private JsImportedModule createImportedModule(JsImportedModuleKey key, String baseName, JsName internalName, JsExpression plainName) {
-        JsImportedModule module = new JsImportedModule(baseName, internalName, plainName);
+    private JsImportedModule createImportedModule(JsImportedModuleKey key, JsName internalName) {
+        JsExpression plainNameRef = key.getPlainName() != null ? pureFqn(key.getPlainName(), null) : null;
+        JsImportedModule module = new JsImportedModule(key.getBaseName(), internalName, plainNameRef, key.getRequireKey());
         importedModules.put(key, module);
         fragment.getImportedModules().add(module);
         return module;

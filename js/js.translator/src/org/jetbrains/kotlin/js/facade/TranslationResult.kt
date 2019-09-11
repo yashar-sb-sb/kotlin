@@ -108,6 +108,7 @@ abstract class TranslationResult protected constructor(val diagnostics: Diagnost
                 val metaFileName = KotlinJavascriptMetadataUtils.replaceSuffix(outputFile.name)
                 val moduleDescription = JsModuleDescriptor(
                     name = config.moduleId,
+                    requireKey = config.requireKey,
                     data = moduleDescriptor,
                     kind = config.moduleKind,
                     imported = importedModules

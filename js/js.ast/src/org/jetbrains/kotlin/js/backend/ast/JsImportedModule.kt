@@ -16,8 +16,13 @@
 
 package org.jetbrains.kotlin.js.backend.ast
 
-class JsImportedModule(val externalName: String, var internalName: JsName, val plainReference: JsExpression?) {
-    val key = JsImportedModuleKey(externalName, plainReference?.toString())
+class JsImportedModule(
+    val externalName: String,
+    var internalName: JsName,
+    val plainReference: JsExpression?,
+    val requireKey: String = externalName
+) {
+    val key = JsImportedModuleKey(externalName, plainReference?.toString(), requireKey)
 }
 
-data class JsImportedModuleKey(val baseName: String, val plainName: String?)
+data class JsImportedModuleKey(val baseName: String, val plainName: String?, val requireKey: String)

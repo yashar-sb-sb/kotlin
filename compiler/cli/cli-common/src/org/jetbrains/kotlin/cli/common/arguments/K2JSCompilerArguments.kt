@@ -134,4 +134,8 @@ class K2JSCompilerArguments : CommonCompilerArguments() {
             description = "Paths to friend modules"
     )
     var friendModules: String? by NullableStringFreezableVar(null)
+
+    @GradleOption(DefaultValues.StringNullDefault::class)
+    @Argument(value = "-Xrequire-key", description = "NPM require key")
+    var requireKey: String? by NullableStringFreezableVar(null)
 }

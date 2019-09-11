@@ -73,6 +73,7 @@ class JsAstSerializer(private val jsAstValidator: ((JsProgramFragment, Set<JsNam
             importedModuleBuilder.externalNameId = serialize(importedModule.externalName)
             importedModuleBuilder.internalNameId = serialize(importedModule.internalName)
             importedModule.plainReference?.let { importedModuleBuilder.plainReference = serialize(it) }
+            importedModuleBuilder.requireKey = serialize(importedModule.requireKey)
             fragmentBuilder.addImportedModule(importedModuleBuilder)
         }
 
@@ -473,13 +474,14 @@ class JsAstSerializer(private val jsAstValidator: ((JsProgramFragment, Set<JsNam
         return visitor.builder.build()
     }
 
-    private fun serialize(module: JsImportedModule): JsAstProtoBuf.JsImportedModule {
-        val moduleBuilder = JsAstProtoBuf.JsImportedModule.newBuilder()
-        moduleBuilder.externalName = serialize(module.externalName)
-        moduleBuilder.internalName = serialize(module.internalName)
+    private fun serialize(module: JsImportedModule): ImportedModule {
+        val moduleBuilder = ImportedModule.newBuilder()
+        moduleBuilder.externalNameId = serialize(module.externalName)
+        moduleBuilder.internalNameId = serialize(module.internalName)
         module.plainReference?.let {
             moduleBuilder.plainReference = serialize(it)
         }
+        moduleBuilder.requireKey = serialize(module.requireKey)
         return moduleBuilder.build()
     }
 

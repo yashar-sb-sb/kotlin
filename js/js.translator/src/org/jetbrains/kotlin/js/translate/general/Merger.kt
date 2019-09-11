@@ -120,7 +120,7 @@ class Merger(
                     if (it.isTemporary) JsScope.declareTemporaryName(it.ident) else scope.declareName(it.ident)
                 }
                 newName.also {
-                    importedModulesImpl += JsImportedModule(importedModule.externalName, it, importedModule.plainReference)
+                    importedModulesImpl += JsImportedModule(importedModule.externalName, it, importedModule.plainReference, importedModule.requireKey)
                     it.copyMetadataFrom(importedModule.internalName)
                 }
             }

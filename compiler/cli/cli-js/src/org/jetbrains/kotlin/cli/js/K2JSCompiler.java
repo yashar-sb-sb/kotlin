@@ -430,6 +430,11 @@ public class K2JSCompiler extends CLICompiler<K2JSCompilerArguments> {
 
         configuration.put(JSConfigurationKeys.FRIEND_PATHS_DISABLED, arguments.getFriendModulesDisabled());
 
+        String requireKey = arguments.getRequireKey();
+        if (requireKey != null) {
+            configuration.put(JSConfigurationKeys.REQUIRE_KEY, requireKey);
+        }
+
         if (!arguments.getFriendModulesDisabled() && arguments.getFriendModules() != null) {
             List<String> friendPaths = ArraysKt.filterNot(arguments.getFriendModules().split(File.pathSeparator), String::isEmpty);
             configuration.put(JSConfigurationKeys.FRIEND_PATHS, friendPaths);

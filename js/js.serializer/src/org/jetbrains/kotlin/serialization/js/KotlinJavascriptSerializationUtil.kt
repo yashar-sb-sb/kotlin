@@ -109,7 +109,7 @@ object KotlinJavascriptSerializationUtil {
         }
 
         fun asString(): String =
-            KotlinJavascriptMetadataUtils.formatMetadataAsString(jsDescriptor.name, asByteArray(), metadataVersion)
+            KotlinJavascriptMetadataUtils.formatMetadataAsString(jsDescriptor.name, jsDescriptor.requireKey, asByteArray(), metadataVersion)
 
         private fun asByteArray(): ByteArray =
             ByteArrayOutputStream().apply {

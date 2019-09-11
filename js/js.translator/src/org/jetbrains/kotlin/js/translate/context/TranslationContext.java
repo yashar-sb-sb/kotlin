@@ -426,13 +426,13 @@ public class TranslationContext {
         if (suggested != null && getConfig().getModuleKind() != ModuleKind.PLAIN && isPublicInlineFunction()) {
             String moduleId = AnnotationsUtils.getModuleName(suggested.getDescriptor());
             if (moduleId != null) {
-                JsExpression replacement = staticContext.exportModuleForInline(moduleId, new JsImportedModule(moduleId, name, null));
+                JsExpression replacement = staticContext.exportModuleForInline(moduleId, new JsImportedModule(moduleId, name, null, moduleId));
                 result = replaceModuleReference(result, name, replacement);
             }
             else if (isNativeObject(suggested.getDescriptor()) && DescriptorUtils.isTopLevelDeclaration(suggested.getDescriptor())) {
                 String fileModuleId = AnnotationsUtils.getFileModuleName(bindingContext(), suggested.getDescriptor());
                 if (fileModuleId != null) {
-                    JsImportedModule fileModuleName = staticContext.getImportedModule(fileModuleId, null);
+                    JsImportedModule fileModuleName = staticContext.getImportedModule(fileModuleId, fileModuleId, null);
                     JsExpression replacement = staticContext.exportModuleForInline(fileModuleId, fileModuleName);
                     result = replaceModuleReference(staticContext.getQualifiedReference(descriptor), fileModuleName.getInternalName(), replacement);
                 }

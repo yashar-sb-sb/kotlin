@@ -22,7 +22,7 @@ import java.io.File
 import java.io.InputStream
 import java.util.*
 
-class KotlinJavascriptMetadata(val version: JsMetadataVersion, val moduleName: String, val body: ByteArray)
+class KotlinJavascriptMetadata(val version: JsMetadataVersion, val moduleName: String, val requireKey: String, val body: ByteArray)
 
 // TODO: move to JS modules
 class JsMetadataVersion(vararg numbers: Int) : BinaryVersion(*numbers) {
@@ -64,7 +64,7 @@ object KotlinJavascriptMetadataUtils {
     /**
      * Matches string like <name>.kotlin_module_metadata(<abi version>, <module name>, <base64 data>)
      */
-    private val METADATA_PATTERN = "(?m)\\w+\\.$KOTLIN_JAVASCRIPT_METHOD_NAME\\((\\d+),\\s*(['\"])([^'\"]*)\\2,\\s*(['\"])([^'\"]*)\\4\\)".toPattern()
+    private val METADATA_PATTERN = "(?m)\\w+\\.$KOTLIN_JAVASCRIPT_METHOD_NAME\\((\\d+),\\s*(['\"])([^'\"]*)\\2,\\s*(['\"])([^'\"]*)\\4\\)(\\.requireKey\\((['\"])([^'\"]*)\\7\\))?".toPattern()
 
     fun replaceSuffix(filePath: String): String = filePath.substringBeforeLast(JS_EXT) + META_JS_SUFFIX
 
@@ -72,9 +72,9 @@ object KotlinJavascriptMetadataUtils {
     fun hasMetadata(text: String): Boolean =
             KOTLIN_JAVASCRIPT_METHOD_NAME_PATTERN.matcher(text).find() && METADATA_PATTERN.matcher(text).find()
 
-    fun formatMetadataAsString(moduleName: String, content: ByteArray, metadataVersion: JsMetadataVersion): String =
+    fun formatMetadataAsString(moduleName: String, requireKey: String, content: ByteArray, metadataVersion: JsMetadataVersion): String =
         "// Kotlin.$KOTLIN_JAVASCRIPT_METHOD_NAME(${metadataVersion.toInteger()}, \"$moduleName\", " +
-        "\"${Base64.getEncoder().encodeToString(content)}\");\n"
+        "\"${Base64.getEncoder().encodeToString(content)}\").requireKey(\"$requireKey\");\n"
 
     @JvmStatic
     fun loadMetadata(file: File): List<KotlinJavascriptMetadata> {
@@ -100,7 +100,8 @@ object KotlinJavascriptMetadataUtils {
             val abiVersion = JsMetadataVersion.fromInteger(matcher.group(1).toInt())
             val moduleName = matcher.group(3)
             val data = matcher.group(5)
-            metadataList.add(KotlinJavascriptMetadata(abiVersion, moduleName, Base64.getDecoder().decode(data)))
+            val requireKey = matcher.group(8) ?: moduleName
+            metadataList.add(KotlinJavascriptMetadata(abiVersion, moduleName, requireKey, Base64.getDecoder().decode(data)))
         }
     }
 }
