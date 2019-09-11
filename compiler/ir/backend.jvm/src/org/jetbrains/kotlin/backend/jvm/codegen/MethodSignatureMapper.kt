@@ -14,10 +14,7 @@ import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrFunctionAccessExpression
 import org.jetbrains.kotlin.ir.types.toKotlinType
-import org.jetbrains.kotlin.ir.util.isFakeOverride
-import org.jetbrains.kotlin.ir.util.isInterface
-import org.jetbrains.kotlin.ir.util.parentAsClass
-import org.jetbrains.kotlin.ir.util.render
+import org.jetbrains.kotlin.ir.util.*
 import org.jetbrains.kotlin.load.java.getOverriddenBuiltinReflectingJvmDescriptor
 import org.jetbrains.kotlin.resolve.jvm.jvmSignature.JvmMethodGenericSignature
 import org.jetbrains.kotlin.resolve.jvm.jvmSignature.JvmMethodSignature
@@ -25,7 +22,7 @@ import org.jetbrains.org.objectweb.asm.Opcodes
 import org.jetbrains.org.objectweb.asm.Type
 import org.jetbrains.org.objectweb.asm.commons.Method
 
-class MethodSignatureMapper(context: JvmBackendContext) {
+class MethodSignatureMapper(private val context: JvmBackendContext) {
     private val typeMapper: IrTypeMapper = context.typeMapper
     private val kotlinTypeMapper: KotlinTypeMapper = context.state.typeMapper
 
@@ -54,7 +51,7 @@ class MethodSignatureMapper(context: JvmBackendContext) {
         kotlinTypeMapper.mapSignatureWithGeneric(f.descriptor, kind)
 
     fun mapToCallableMethod(expression: IrFunctionAccessExpression): IrCallableMethod {
-        val callee = expression.symbol.owner
+        val callee = expression.symbol.owner.getOrCreateSuspendFunctionViewIfNeeded(context)
         val calleeParent = callee.parent
         if (calleeParent !is IrClass) {
             // Non-class parent is only possible for intrinsics created in IrBuiltIns, such as dataClassArrayMemberHashCode. In that case,
