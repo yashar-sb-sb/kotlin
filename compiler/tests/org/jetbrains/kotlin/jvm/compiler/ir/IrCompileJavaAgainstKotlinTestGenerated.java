@@ -141,6 +141,11 @@ public class IrCompileJavaAgainstKotlinTestGenerated extends AbstractIrCompileJa
         public void testStarProjection() throws Exception {
             runTest("compiler/testData/compileJavaAgainstKotlin/class/StarProjection.kt");
         }
+
+        @TestMetadata("SubClass.kt")
+        public void testSubClass() throws Exception {
+            runTest("compiler/testData/compileJavaAgainstKotlin/class/SubClass.kt");
+        }
     }
 
     @TestMetadata("compiler/testData/compileJavaAgainstKotlin/enum")

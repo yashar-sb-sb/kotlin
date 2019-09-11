@@ -1,0 +1,12 @@
+package test
+
+public fun test(): kotlin.Unit
+
+public interface Base {
+    public abstract fun foo(): kotlin.Int
+}
+
+public open class SubClass : test.Base {
+    public constructor SubClass()
+    public open fun foo(): kotlin.Int
+}

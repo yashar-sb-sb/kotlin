@@ -279,6 +279,11 @@ public class CompileKotlinAgainstJavaTestGenerated extends AbstractCompileKotlin
         runTest("compiler/testData/compileKotlinAgainstJava/StaticNestedClass.kt");
     }
 
+    @TestMetadata("SubClass.kt")
+    public void testSubClass() throws Exception {
+        runTest("compiler/testData/compileKotlinAgainstJava/SubClass.kt");
+    }
+
     @TestMetadata("TypeArgumentInSuperType.kt")
     public void testTypeArgumentInSuperType() throws Exception {
         runTest("compiler/testData/compileKotlinAgainstJava/TypeArgumentInSuperType.kt");

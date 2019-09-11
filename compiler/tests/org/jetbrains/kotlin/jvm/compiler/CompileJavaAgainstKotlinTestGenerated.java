@@ -143,6 +143,11 @@ public class CompileJavaAgainstKotlinTestGenerated extends AbstractCompileJavaAg
             public void testStarProjection() throws Exception {
                 runTest("compiler/testData/compileJavaAgainstKotlin/class/StarProjection.kt");
             }
+
+            @TestMetadata("SubClass.kt")
+            public void testSubClass() throws Exception {
+                runTest("compiler/testData/compileJavaAgainstKotlin/class/SubClass.kt");
+            }
         }
 
         @TestMetadata("compiler/testData/compileJavaAgainstKotlin/enum")
@@ -785,6 +790,11 @@ public class CompileJavaAgainstKotlinTestGenerated extends AbstractCompileJavaAg
             @TestMetadata("StarProjection.kt")
             public void testStarProjection() throws Exception {
                 runTest("compiler/testData/compileJavaAgainstKotlin/class/StarProjection.kt");
+            }
+
+            @TestMetadata("SubClass.kt")
+            public void testSubClass() throws Exception {
+                runTest("compiler/testData/compileJavaAgainstKotlin/class/SubClass.kt");
             }
         }
 
