@@ -12,7 +12,6 @@ import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSeverity
 import org.jetbrains.kotlin.cli.common.messages.MessageCollector
 import org.jetbrains.kotlin.scripting.definitions.MessageReporter
 import kotlin.reflect.KMutableProperty1
-import kotlin.reflect.full.findAnnotation
 import kotlin.script.experimental.api.ResultWithDiagnostics
 import kotlin.script.experimental.api.ScriptDiagnostic
 import kotlin.script.experimental.api.SourceCode
@@ -136,7 +135,7 @@ private fun reportIgnoredArguments(
 ) {
     val ignoredArgKeys = toIgnore.mapNotNull { argProperty ->
         if (argProperty.get(arguments) != argProperty.get(reportingState.currentArguments)) {
-            argProperty.findAnnotation<Argument>()?.value
+            argProperty.annotations.firstOrNull { it is Argument }?.let { (it as Argument).value }
                 ?: throw IllegalStateException("unknown compiler argument property: $argProperty: no Argument annotation found")
         } else null
     }
