@@ -7,7 +7,6 @@ package org.jetbrains.kotlin.idea.caches.resolve
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ProjectRootModificationTracker
-import com.intellij.openapi.util.ModificationTracker
 import com.intellij.psi.util.CachedValueProvider
 import com.intellij.psi.util.CachedValuesManager
 import com.intellij.util.containers.SLRUCache
@@ -17,13 +16,11 @@ import org.jetbrains.kotlin.idea.caches.project.*
 import org.jetbrains.kotlin.idea.caches.project.IdeaModuleInfo
 import org.jetbrains.kotlin.idea.caches.resolve.util.contextWithCompositeExceptionTracker
 import org.jetbrains.kotlin.idea.caches.trackers.KotlinCodeBlockModificationListener
-import org.jetbrains.kotlin.idea.caches.trackers.outOfBlockModificationCount
 import org.jetbrains.kotlin.idea.core.script.ScriptDependenciesModificationTracker
 import org.jetbrains.kotlin.idea.core.script.dependencies.ScriptAdditionalIdeaDependenciesProvider
 import org.jetbrains.kotlin.idea.resolve.ResolutionFacade
 import org.jetbrains.kotlin.platform.jvm.JvmPlatforms
 import org.jetbrains.kotlin.psi.KtFile
-import org.jetbrains.kotlin.utils.addToStdlib.sumByLong
 
 internal class KotlinCacheServiceForScripts(
     val project: Project,
@@ -108,22 +105,6 @@ internal class KotlinCacheServiceForScripts(
         val debugName = debugNamePrefix + " with synthetic files ${files.joinToString { it.name }}"
         val globalContext = reuseDataFrom.globalContext.contextWithCompositeExceptionTracker(project, debugName)
 
-        val filesModificationTracker = if (files.all { it.originalFile != it }) {
-            ModificationTracker {
-                files.sumByLong { it.outOfBlockModificationCount }
-            }
-        } else {
-            ModificationTracker {
-                files.sumByLong { it.outOfBlockModificationCount + it.modificationStamp }
-            }
-        }
-
-        val dependenciesForSyntheticFileCache =
-            listOf(
-                KotlinCodeBlockModificationListener.getInstance(project).kotlinOutOfCodeBlockTracker,
-                filesModificationTracker
-            )
-
         return ProjectResolutionFacade(
             debugString = "facade for $debugNamePrefix",
             resolverDebugName = debugName,
@@ -133,7 +114,9 @@ internal class KotlinCacheServiceForScripts(
             syntheticFiles = files,
             reuseDataFrom = reuseDataFrom,
             moduleFilter = moduleFilter,
-            dependencies = dependenciesForSyntheticFileCache,
+            dependencies = listOf(
+                KotlinCodeBlockModificationListener.getInstance(project).kotlinOutOfCodeBlockTracker
+            ),
             invalidateOnOOCB = true,
             builtInsCache = reuseDataFrom.builtInsCache
         )
