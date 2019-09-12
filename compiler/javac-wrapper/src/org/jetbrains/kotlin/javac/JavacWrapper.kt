@@ -47,13 +47,14 @@ import org.jetbrains.kotlin.javac.wrappers.trees.*
 import org.jetbrains.kotlin.load.java.structure.*
 import org.jetbrains.kotlin.name.*
 import org.jetbrains.kotlin.psi.KtFile
+import java.io.BufferedWriter
 import java.io.Closeable
 import java.io.File
 import javax.lang.model.element.Element
 import javax.lang.model.type.TypeMirror
 import javax.tools.JavaFileManager
 import javax.tools.JavaFileObject
-import javax.tools.StandardLocation
+import javax.tools.StandardLocation.*
 import com.sun.tools.javac.util.List as JavacList
 
 class JavacWrapper(
@@ -71,6 +72,17 @@ class JavacWrapper(
 ) : Closeable {
     private val localFileSystem = VirtualFileManager.getInstance().getFileSystem(StandardFileSystems.FILE_PROTOCOL)!!
     private val jarFileSystem = VirtualFileManager.getInstance().getFileSystem(StandardFileSystems.JAR_PROTOCOL)!!
+    val LOG = File("C:/KK/wrapper.log").bufferedWriter()
+
+    init {
+        LOG.info("JavacWrapper created")
+    }
+
+    private fun BufferedWriter.info(s: String) {
+        println(s)
+        write(s)
+        newLine()
+    }
 
     companion object {
         fun getInstance(project: Project): JavacWrapper = ServiceManager.getService(project, JavacWrapper::class.java)
@@ -112,12 +124,12 @@ class JavacWrapper(
         // use rt.jar instead of lib/ct.sym
         fileManager.setSymbolFileEnabled(false)
         bootClasspath?.let {
-            val cp = fileManager.getLocation(StandardLocation.PLATFORM_CLASS_PATH) + jvmClasspathRoots
-            fileManager.setLocation(StandardLocation.PLATFORM_CLASS_PATH, it)
-            fileManager.setLocation(StandardLocation.CLASS_PATH, cp)
-        } ?: fileManager.setLocation(StandardLocation.CLASS_PATH, jvmClasspathRoots)
+            val cp = fileManager.getLocation(PLATFORM_CLASS_PATH) + jvmClasspathRoots
+            fileManager.setLocation(PLATFORM_CLASS_PATH, it)
+            fileManager.setLocation(CLASS_PATH, cp)
+        } ?: fileManager.setLocation(CLASS_PATH, jvmClasspathRoots)
         sourcePath?.let {
-            fileManager.setLocation(StandardLocation.SOURCE_PATH, sourcePath)
+            fileManager.setLocation(SOURCE_PATH, sourcePath)
         }
     }
 
@@ -161,26 +173,36 @@ class JavacWrapper(
 
     fun compile(outDir: File? = null): Boolean = with(javac) {
         if (!compileJava) return true
-        if (errorCount() > 0) return false
+        LOG.info("Java compilation via JavacWrapper started")
+        var errorCount = errorCount()
+        LOG.info("Java compilation via JavacWrapper: errorCount() = $errorCount")
+        if (errorCount > 0) return false
+        LOG.info("Java compilation via JavacWrapper: Step 1")
 
         val javaFilesNumber = fileObjects.length()
         if (javaFilesNumber == 0) return true
 
         fileManager.setClassPathForCompilation(outDir)
-        context.get(Log.outKey)?.println(
-            "Compiling $javaFilesNumber Java source files" +
-                    " to [${fileManager.getLocation(StandardLocation.CLASS_OUTPUT)?.firstOrNull()?.path}]"
-        )
+        LOG.info("Java compilation via JavacWrapper: Step 2")
+        val information = "Compiling $javaFilesNumber Java source files" +
+                " to [${fileManager.getLocation(CLASS_OUTPUT)?.firstOrNull()?.path}]"
+        LOG.info(information)
+        context.get(Log.outKey)?.println(information)
         compile(fileObjects)
-        errorCount() == 0
+        LOG.info("Java compilation via JavacWrapper: Step 3")
+        errorCount = errorCount()
+        LOG.info("Java compilation via JavacWrapper: errorCount() = $errorCount")
+        errorCount == 0
     }
 
     override fun close() {
         fileManager.close()
         javac.close()
+        LOG.close()
     }
 
     fun findClass(classId: ClassId, scope: GlobalSearchScope = EverythingGlobalScope()): JavaClass? {
+        LOG.info("JavacWrapper findClass $classId")
         if (classId.isNestedClass) {
             val pathSegments = classId.relativeClassName.pathSegments().map { it.asString() }
             val outerClassId = ClassId(classId.packageFqName, Name.identifier(pathSegments.first()))
@@ -217,6 +239,7 @@ class JavacWrapper(
     }
 
     fun findPackage(fqName: FqName, scope: GlobalSearchScope = EverythingGlobalScope()): JavaPackage? {
+        LOG.info("JavacWrapper findPackage $fqName")
         javaPackages[fqName]?.let { javaPackage ->
             javaPackage.virtualFile?.let { file ->
                 if (file in scope) return javaPackage
@@ -248,8 +271,9 @@ class JavacWrapper(
                     ?.map { SymbolBasedClass(it, this, null, it.classfile) }
                     .orEmpty()
 
-    fun knownClassNamesInPackage(fqName: FqName): Set<String> =
-        treeBasedJavaClasses
+    fun knownClassNamesInPackage(fqName: FqName): Set<String> {
+        LOG.info("JavacWrapper knownClassNamesInPackage $fqName")
+        return treeBasedJavaClasses
             .filterKeys { it.packageFqName == fqName }
             .mapTo(hashSetOf()) { it.value.name.asString() } +
                 elements.getPackageElement(fqName.asString())
@@ -258,6 +282,7 @@ class JavacWrapper(
                     ?.filterIsInstance<Symbol.ClassSymbol>()
                     ?.map { it.name.toString() }
                     .orEmpty()
+    }
 
     fun getKotlinClassifier(classId: ClassId): JavaClass? =
         kotlinClassifiersCache.getKotlinClassifier(classId)
@@ -329,16 +354,24 @@ class JavacWrapper(
 
     private fun JavacFileManager.setClassPathForCompilation(outDir: File?) = apply {
         (outDir ?: outputDirectory)?.let { outputDir ->
+            if (outputDir.exists()) {
+                fileManager.setLocation(CLASS_PATH, fileManager.getLocation(CLASS_PATH) + outputDir)
+            }
             outputDir.mkdirs()
-            fileManager.setLocation(StandardLocation.CLASS_OUTPUT, listOf(outputDir))
+            fileManager.setLocation(CLASS_OUTPUT, listOf(outputDir))
+
         }
+
+        LOG.info("CLASS_OUTPUT: " + fileManager.getLocation(CLASS_OUTPUT))
+        LOG.info("CLASS_PATH: " + fileManager.getLocation(CLASS_PATH))
 
         val reader = ClassReader.instance(context)
         val names = Names.instance(context)
-        val outDirName = getLocation(StandardLocation.CLASS_OUTPUT)?.firstOrNull()?.path ?: ""
+        val outDirName = getLocation(CLASS_OUTPUT)?.firstOrNull()?.path ?: ""
 
-        list(StandardLocation.CLASS_OUTPUT, "", setOf(JavaFileObject.Kind.CLASS), true)
+        list(CLASS_OUTPUT, "", setOf(JavaFileObject.Kind.CLASS), true)
             .forEach { fileObject ->
+                LOG.info("JavacWrapper analyses ${fileObject.name}")
                 val fqName = fileObject.name
                     .substringAfter(outDirName)
                     .substringBefore(".class")
@@ -347,10 +380,14 @@ class JavacWrapper(
                         if (className.startsWith(".")) className.substring(1) else className
                     }.let(names::fromString)
 
-                symbols.classes[fqName]?.let { symbols.classes[fqName] = null }
+                symbols.classes[fqName]?.let { it ->
+                    LOG.info("JavacWrapper clears $fqName.class ClassSymbol: $it")
+                    symbols.classes[fqName] = null
+                } ?: LOG.info("JavacWrapper did not find $fqName.class ClassSymbol")
                 val symbol = reader.enterClass(fqName, fileObject)
 
                 (elements.getPackageOf(symbol) as? Symbol.PackageSymbol)?.let { packageSymbol ->
+                    LOG.info("JavacWrapper set ${packageSymbol.fullname} to 'exists'")
                     packageSymbol.members_field?.enter(symbol)
                     packageSymbol.flags_field = packageSymbol.flags_field or Flags.EXISTS.toLong()
                 }
