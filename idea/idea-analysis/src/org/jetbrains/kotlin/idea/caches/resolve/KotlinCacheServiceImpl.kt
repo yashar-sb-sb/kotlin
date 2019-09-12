@@ -31,8 +31,6 @@ import com.intellij.util.containers.SLRUCache
 import org.jetbrains.kotlin.analyzer.ModuleInfo
 import org.jetbrains.kotlin.analyzer.ResolverForProject.Companion.resolverForLibrariesName
 import org.jetbrains.kotlin.analyzer.ResolverForProject.Companion.resolverForModulesName
-import org.jetbrains.kotlin.analyzer.ResolverForProject.Companion.resolverForScriptDependenciesName
-import org.jetbrains.kotlin.analyzer.ResolverForProject.Companion.resolverForScriptsName
 import org.jetbrains.kotlin.analyzer.ResolverForProject.Companion.resolverForSdkName
 import org.jetbrains.kotlin.analyzer.ResolverForProject.Companion.resolverForSpecialInfoName
 import org.jetbrains.kotlin.builtins.DefaultBuiltIns
@@ -49,14 +47,11 @@ import org.jetbrains.kotlin.idea.caches.resolve.util.contextWithCompositeExcepti
 import org.jetbrains.kotlin.idea.caches.trackers.KotlinCodeBlockModificationListener
 import org.jetbrains.kotlin.idea.caches.trackers.outOfBlockModificationCount
 import org.jetbrains.kotlin.idea.compiler.IDELanguageSettingsProvider
-import org.jetbrains.kotlin.idea.core.script.ScriptDependenciesModificationTracker
-import org.jetbrains.kotlin.idea.core.script.dependencies.ScriptAdditionalIdeaDependenciesProvider
 import org.jetbrains.kotlin.idea.project.TargetPlatformDetector
 import org.jetbrains.kotlin.idea.project.useCompositeAnalysis
 import org.jetbrains.kotlin.idea.resolve.ResolutionFacade
 import org.jetbrains.kotlin.idea.util.ProjectRootsUtil
 import org.jetbrains.kotlin.platform.TargetPlatform
-import org.jetbrains.kotlin.platform.jvm.JvmPlatforms
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.contains
 import org.jetbrains.kotlin.resolve.BindingContext
@@ -139,47 +134,6 @@ class KotlinCacheServiceImpl(val project: Project) : KotlinCacheService {
             }
         }
 
-    private val facadeForScriptDependenciesForProject = createFacadeForScriptDependencies(ScriptDependenciesInfo.ForProject(project))
-
-    private fun createFacadeForScriptDependencies(dependenciesModuleInfo: ScriptDependenciesInfo): ProjectResolutionFacade {
-        val sdk = dependenciesModuleInfo.sdk
-        val platform = JvmPlatforms.defaultJvmPlatform // TODO: Js scripts?
-        val settings = PlatformAnalysisSettings.create(
-            project, platform, sdk, true,
-            LanguageFeature.ReleaseCoroutines.defaultState == LanguageFeature.State.ENABLED
-        )
-
-        val dependenciesForScriptDependencies = listOf(
-            LibraryModificationTracker.getInstance(project),
-            ProjectRootModificationTracker.getInstance(project),
-            ScriptDependenciesModificationTracker.getInstance(project)
-        )
-
-        val scriptFile = (dependenciesModuleInfo as? ScriptDependenciesInfo.ForFile)?.scriptFile
-        val relatedModules = scriptFile?.let { ScriptAdditionalIdeaDependenciesProvider.getRelatedModules(it, project) }
-        val globalFacade =
-            if (relatedModules?.isNotEmpty() == true) {
-                globalFacade(settings)
-            } else {
-                getOrBuildGlobalFacade(settings).facadeForSdk
-            }
-
-        val globalContext = globalFacade.globalContext.contextWithCompositeExceptionTracker(project, "facadeForScriptDependencies")
-        return ProjectResolutionFacade(
-            "facadeForScriptDependencies",
-            resolverForScriptDependenciesName,
-            project, globalContext, settings,
-            reuseDataFrom = globalFacade,
-            allModules = dependenciesModuleInfo.dependencies(),
-            //TODO: provide correct trackers
-            dependencies = dependenciesForScriptDependencies,
-            moduleFilter = { it == dependenciesModuleInfo },
-            invalidateOnOOCB = true,
-            builtInsCache = globalFacade.builtInsCache
-        )
-    }
-
-
     private inner class GlobalFacade(settings: PlatformAnalysisSettings) {
         private val sdkContext = GlobalContext(resolverForSdkName)
         val facadeForSdk = ProjectResolutionFacade(
@@ -224,16 +178,12 @@ class KotlinCacheServiceImpl(val project: Project) : KotlinCacheService {
         )
     }
 
-    private fun IdeaModuleInfo.platformSettings(targetPlatform: TargetPlatform) = PlatformAnalysisSettings.create(
-        project, targetPlatform, sdk,
-        supportsAdditionalBuiltInsMembers(project),
-        isReleaseCoroutines()
-    )
-
-    private fun IdeaModuleInfo.isReleaseCoroutines(): Boolean {
-        return IDELanguageSettingsProvider
-            .getLanguageVersionSettings(this, project)
-            .supportsFeature(LanguageFeature.ReleaseCoroutines)
+    private val scriptsCacheService by lazy {
+        KotlinCacheServiceForScripts(
+            project,
+            { getOrBuildGlobalFacade(it).facadeForSdk },
+            { getOrBuildGlobalFacade(it).facadeForModules }
+        )
     }
 
     private fun globalFacade(settings: PlatformAnalysisSettings) =
@@ -246,77 +196,11 @@ class KotlinCacheServiceImpl(val project: Project) : KotlinCacheService {
     private fun getOrBuildGlobalFacade(settings: PlatformAnalysisSettings) =
         globalFacadesPerPlatformAndSdk[settings]
 
-    private fun wrapWitSyntheticFiles(
-        reuseDataFrom: ProjectResolutionFacade,
-        debugNamePrefix: String,
-        files: Set<KtFile>,
-        moduleFilter: (IdeaModuleInfo) -> Boolean = reuseDataFrom.moduleFilter
-    ): ProjectResolutionFacade {
-        val debugName = debugNamePrefix + " with synthetic files ${files.joinToString { it.name }}"
-        val globalContext = reuseDataFrom.globalContext.contextWithCompositeExceptionTracker(project, debugName)
-
-        val filesModificationTracker = if (files.all { it.originalFile != it }) {
-            ModificationTracker {
-                files.sumByLong { it.outOfBlockModificationCount }
-            }
-        } else {
-            ModificationTracker {
-                files.sumByLong { it.outOfBlockModificationCount + it.modificationStamp }
-            }
-        }
-
-        val dependenciesForSyntheticFileCache =
-            listOf(
-                KotlinCodeBlockModificationListener.getInstance(project).kotlinOutOfCodeBlockTracker,
-                filesModificationTracker
-            )
-
-        return ProjectResolutionFacade(
-            debugString = "facade for $debugNamePrefix",
-            resolverDebugName = debugName,
-            project = project,
-            globalContext = globalContext,
-            settings = reuseDataFrom.settings,
-            syntheticFiles = files,
-            reuseDataFrom = reuseDataFrom,
-            moduleFilter = moduleFilter,
-            dependencies = dependenciesForSyntheticFileCache,
-            invalidateOnOOCB = true,
-            builtInsCache = reuseDataFrom.builtInsCache
-        )
-    }
-
-    private fun createFacadeForScripts(files: Set<KtFile>): ProjectResolutionFacade {
-        // we assume that all files come from the same module
-        val scriptModuleInfo = files.map(KtFile::getModuleInfo).toSet().single()
-        val platform = scriptModuleInfo.platform
-        val settings = scriptModuleInfo.platformSettings(platform)
-
-        if (scriptModuleInfo is ModuleSourceInfo) {
-            val dependentModules = scriptModuleInfo.getDependentModules()
-            return wrapWitSyntheticFiles(globalFacade(settings), resolverForScriptsName, files) {
-                it in dependentModules
-            }
-        }
-
-        check(scriptModuleInfo is ScriptModuleInfo) {
-            "Unknown ModuleInfo for scripts ${scriptModuleInfo::class.java}"
-        }
-
-        val facadeForScriptDependencies = createFacadeForScriptDependencies(
-            ScriptDependenciesInfo.ForFile(project, scriptModuleInfo.scriptFile, scriptModuleInfo.scriptDefinition)
-        )
-
-        return wrapWitSyntheticFiles(facadeForScriptDependencies, resolverForScriptsName, files) {
-            it == scriptModuleInfo
-        }
-    }
-
     private fun createFacadeForFilesWithSpecialModuleInfo(files: Set<KtFile>): ProjectResolutionFacade {
         // we assume that all files come from the same module
         val targetPlatform = files.map { TargetPlatformDetector.getPlatform(it) }.toSet().single()
         val specialModuleInfo = files.map(KtFile::getModuleInfo).toSet().single()
-        val settings = specialModuleInfo.platformSettings(specialModuleInfo.platform ?: targetPlatform)
+        val settings = specialModuleInfo.platformSettings(project, specialModuleInfo.platform ?: targetPlatform)
 
         // File copies are created during completion and receive correct modification events through POM.
         // Dummy files created e.g. by J2K do not receive events.
@@ -480,33 +364,13 @@ class KotlinCacheServiceImpl(val project: Project) : KotlinCacheService {
         }
     }
 
-    private val scriptsCacheProvider = CachedValueProvider {
-        CachedValueProvider.Result(
-            object : SLRUCache<Set<KtFile>, ProjectResolutionFacade>(10, 5) {
-                override fun createValue(files: Set<KtFile>) = createFacadeForScripts(files)
-            },
-            LibraryModificationTracker.getInstance(project),
-            ProjectRootModificationTracker.getInstance(project),
-            ScriptDependenciesModificationTracker.getInstance(project)
-        )
-    }
-
-    private fun getFacadeForScripts(files: Set<KtFile>): ProjectResolutionFacade {
-        val cachedValue: SLRUCache<Set<KtFile>, ProjectResolutionFacade> =
-            CachedValuesManager.getManager(project).getCachedValue(project, scriptsCacheProvider)
-
-        return synchronized(cachedValue) {
-            cachedValue.get(files)
-        }
-    }
-
     private fun getFacadeToAnalyzeFiles(files: Collection<KtFile>, platform: TargetPlatform): ResolutionFacade {
         val file = files.first()
         val moduleInfo = file.getModuleInfo()
         val originalFiles = files.unwrapCodeFragments()
         val specialFiles = originalFiles.filterNotInProjectSource(moduleInfo)
 
-        val facadeFromScriptService = getFacadeForScripts(originalFiles, moduleInfo)
+        val facadeFromScriptService = scriptsCacheService.getFacadeForScripts(originalFiles, moduleInfo)
         if (facadeFromScriptService != null) {
             return facadeFromScriptService
         }
@@ -517,40 +381,6 @@ class KotlinCacheServiceImpl(val project: Project) : KotlinCacheService {
         }
 
         return getResolutionFacadeByModuleInfo(moduleInfo, platform).createdFor(emptyList(), moduleInfo, platform)
-    }
-
-    private fun getFacadeForScripts(files: List<KtFile>, moduleInfo: IdeaModuleInfo): ResolutionFacade? {
-        return when {
-            isRegularScript(moduleInfo, files) -> {
-                val projectFacade = getFacadeForScripts(files.toSet())
-                ModuleResolutionFacadeImpl(projectFacade, moduleInfo).createdFor(files, moduleInfo)
-            }
-            isScriptDependencies(moduleInfo) -> {
-                val projectFacade = wrapWitSyntheticFiles(
-                    facadeForScriptDependenciesForProject,
-                    resolverForScriptDependenciesName,
-                    files.toSet()
-                )
-                ModuleResolutionFacadeImpl(projectFacade, moduleInfo).createdFor(files, moduleInfo)
-            }
-            else -> null
-        }
-    }
-
-    // In some cases (for ex. during scratch compilation) we analyzing simple KtFile in context of KtScript,
-    // so its moduleInfo will be ScriptModuleInfo, but it won't be a script it self
-    private fun isScriptDependencies(moduleInfo: IdeaModuleInfo) =
-        moduleInfo is ScriptDependenciesInfo || moduleInfo is ScriptDependenciesSourceInfo
-
-    private fun isRegularScript(
-        moduleInfo: IdeaModuleInfo,
-        files: List<KtFile>
-    ): Boolean {
-        if (moduleInfo is ScriptModuleInfo) return true
-        if (moduleInfo is ModuleSourceInfo) {
-            return files.filter { it.isScript() }.toSet().isNotEmpty()
-        }
-        return false
     }
 
     override fun getResolutionFacadeByFile(file: PsiFile, platform: TargetPlatform): ResolutionFacade? {
@@ -565,13 +395,13 @@ class KotlinCacheServiceImpl(val project: Project) : KotlinCacheService {
     }
 
     private fun getResolutionFacadeByModuleInfo(moduleInfo: IdeaModuleInfo, platform: TargetPlatform): ResolutionFacade {
-        val settings = moduleInfo.platformSettings(platform)
-        val projectFacade = when (moduleInfo) {
-            is ScriptDependenciesInfo.ForProject,
-            is ScriptDependenciesSourceInfo.ForProject -> facadeForScriptDependenciesForProject
-            is ScriptDependenciesInfo.ForFile -> createFacadeForScriptDependencies(moduleInfo)
-            else -> globalFacade(settings)
+        val facadeFromScriptService = scriptsCacheService.getFacadeForScriptDependencies(moduleInfo)
+        if (facadeFromScriptService != null) {
+            return facadeFromScriptService
         }
+
+        val settings = moduleInfo.platformSettings(project, platform)
+        val projectFacade= globalFacade(settings)
         return ModuleResolutionFacadeImpl(projectFacade, moduleInfo)
     }
 
@@ -634,3 +464,15 @@ fun IdeaModuleInfo.supportsAdditionalBuiltInsMembers(project: Project): Boolean 
 }
 
 val IdeaModuleInfo.sdk: Sdk? get() = dependencies().firstIsInstanceOrNull<SdkInfo>()?.sdk
+
+internal fun IdeaModuleInfo.platformSettings(project: Project, targetPlatform: TargetPlatform) = PlatformAnalysisSettings.create(
+    project, targetPlatform, sdk,
+    supportsAdditionalBuiltInsMembers(project),
+    isReleaseCoroutines(project)
+)
+
+internal fun IdeaModuleInfo.isReleaseCoroutines(project: Project): Boolean {
+    return IDELanguageSettingsProvider
+        .getLanguageVersionSettings(this, project)
+        .supportsFeature(LanguageFeature.ReleaseCoroutines)
+}
