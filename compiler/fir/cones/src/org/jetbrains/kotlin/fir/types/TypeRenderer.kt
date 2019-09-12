@@ -46,6 +46,6 @@ fun ConeKotlinType.render(): String {
                 postfix = ")"
             )
         }
-        is ConeStubType -> this.toString()
+        is ConeStubType -> "stub type: $variable"
     } + nullabilitySuffix
 }
