@@ -353,11 +353,7 @@ class JavacWrapper(
                         if (className.startsWith(".")) className.substring(1) else className
                     }.let(names::fromString)
 
-                symbols.classes[fqName]?.let {
-                    symbols.classes[fqName] = null
-                }
                 val symbol = reader.enterClass(fqName, fileObject)
-
                 (elements.getPackageOf(symbol) as? Symbol.PackageSymbol)?.let { packageSymbol ->
                     packageSymbol.members_field?.enter(symbol)
                     packageSymbol.flags_field = packageSymbol.flags_field or Flags.EXISTS.toLong()
