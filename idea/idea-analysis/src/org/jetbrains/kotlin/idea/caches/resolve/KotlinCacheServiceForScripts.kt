@@ -11,7 +11,6 @@ import com.intellij.psi.util.CachedValueProvider
 import com.intellij.psi.util.CachedValuesManager
 import com.intellij.util.containers.SLRUCache
 import org.jetbrains.kotlin.analyzer.ResolverForProject
-import org.jetbrains.kotlin.config.LanguageFeature
 import org.jetbrains.kotlin.idea.caches.project.*
 import org.jetbrains.kotlin.idea.caches.project.IdeaModuleInfo
 import org.jetbrains.kotlin.idea.caches.resolve.util.contextWithCompositeExceptionTracker
@@ -64,12 +63,8 @@ internal class KotlinCacheServiceForScripts(
 
     @Synchronized
     private fun getOrBuildScriptsGlobalFacade(): ScriptsGlobalFacade {
-        val sdk = ScriptDependenciesInfo.ForProject(project).sdk
         val platform = JvmPlatforms.defaultJvmPlatform // TODO: Js scripts?
-        val settings = PlatformAnalysisSettings.create(
-            project, platform, sdk, true,
-            LanguageFeature.ReleaseCoroutines.defaultState == LanguageFeature.State.ENABLED
-        )
+        val settings = ScriptDependenciesInfo.ForProject(project).platformSettings(project, platform)
         return globalScriptFacadesPerPlatformAndSdk[settings]
     }
 
@@ -117,13 +112,8 @@ internal class KotlinCacheServiceForScripts(
     }
 
     private fun createFacadeForScriptDependencies(moduleInfo: ScriptDependenciesInfo.ForFile): ProjectResolutionFacade {
-        val sdk = moduleInfo.sdk
         val platform = JvmPlatforms.defaultJvmPlatform // TODO: Js scripts?
-        val settings = PlatformAnalysisSettings.create(
-            project, platform, sdk, true,
-            LanguageFeature.ReleaseCoroutines.defaultState == LanguageFeature.State.ENABLED
-        )
-
+        val settings = moduleInfo.platformSettings(project, platform)
         val relatedModules = ScriptAdditionalIdeaDependenciesProvider.getRelatedModules(moduleInfo.scriptFile, project)
         val globalFacade =
             if (relatedModules.isNotEmpty()) {
