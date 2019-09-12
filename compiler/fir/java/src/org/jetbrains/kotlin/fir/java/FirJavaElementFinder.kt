@@ -226,7 +226,8 @@ private fun ConeKotlinType.mapToCanonicalString(session: FirSession): String {
     return when (this) {
         is ConeClassLikeType -> mapToCanonicalString(session)
         is ConeTypeParameterType -> lookupTag.name.asString()
-        is ConeTypeVariableType, is ConeFlexibleType, is ConeCapturedType, is ConeDefinitelyNotNullType, is ConeIntersectionType ->
+        is ConeTypeVariableType, is ConeFlexibleType, is ConeCapturedType,
+        is ConeDefinitelyNotNullType, is ConeIntersectionType, is ConeStubType ->
             error("Unexpected type: $this [${this::class}]")
     }
 }
@@ -253,7 +254,7 @@ private fun ConeClassType.mapToCanonicalString(session: FirSession): String {
         } + "[]"
     }
 
-    val context = ConeTypeCheckerContext(false, session)
+    val context = ConeTypeCheckerContext(isErrorTypeEqualsToAnything = false, isStubTypeEqualsToAnything = true, session = session)
 
     with(context) {
         val typeConstructor = typeConstructor()
