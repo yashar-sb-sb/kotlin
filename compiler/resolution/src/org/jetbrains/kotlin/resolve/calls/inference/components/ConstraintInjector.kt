@@ -65,7 +65,6 @@ class ConstraintInjector(
         addSubTypeConstraintAndIncorporateIt(c, b, a, incorporationPosition)
     }
 
-
     private fun addSubTypeConstraintAndIncorporateIt(
         c: Context,
         lowerType: KotlinTypeMarker,
