@@ -715,7 +715,12 @@ public final class StaticContext {
 
         if (UNKNOWN_EXTERNAL_MODULE_NAME.equals(moduleName)) return null;
 
-        String requireKey = config.getRequireKey(module);
+        String requireKey;
+        if (module.getName().equals(KotlinBuiltIns.BUILTINS_MODULE_NAME)) {
+            requireKey = Namer.KOTLIN_LOWER_NAME;
+        } else {
+            requireKey = config.getRequireKey(module);
+        }
 
         return getImportedModule(moduleName, requireKey, null);
     }
