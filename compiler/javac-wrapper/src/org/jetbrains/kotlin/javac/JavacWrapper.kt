@@ -47,7 +47,6 @@ import org.jetbrains.kotlin.javac.wrappers.trees.*
 import org.jetbrains.kotlin.load.java.structure.*
 import org.jetbrains.kotlin.name.*
 import org.jetbrains.kotlin.psi.KtFile
-import java.io.BufferedWriter
 import java.io.Closeable
 import java.io.File
 import javax.lang.model.element.Element
