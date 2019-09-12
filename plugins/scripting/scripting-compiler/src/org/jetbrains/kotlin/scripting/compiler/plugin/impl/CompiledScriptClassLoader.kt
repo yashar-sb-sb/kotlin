@@ -11,11 +11,11 @@ import java.io.InputStream
 import java.net.URL
 import java.util.*
 
-class CompiledScriptClassLoader(parent: ClassLoader?, private val entries: Map<String, ByteArray>) : ClassLoader(parent) {
+class CompiledScriptClassLoader(val parentLast: ClassLoader?, private val entries: Map<String, ByteArray>) : ClassLoader(null) {
 
     override fun findClass(name: String): Class<*>? {
         val classPathName = name.replace('.', '/') + ".class"
-        val classBytes = entries[classPathName] ?: return null
+        val classBytes = entries[classPathName] ?: return parentLast?.loadClass(name)
         return defineClass(name, classBytes, 0, classBytes.size)
     }
 
