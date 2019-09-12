@@ -36,11 +36,7 @@ internal class KotlinCacheServiceForScripts(
                 ModuleResolutionFacadeImpl(projectFacade, moduleInfo).createdFor(files, moduleInfo)
             }
             isScriptDependencies(moduleInfo) -> {
-                val projectFacade = wrapWitSyntheticFiles(
-                    getOrBuildScriptsGlobalFacade().facadeForDependencies,
-                    resolverForScriptDependenciesName,
-                    files.toSet()
-                )
+                val projectFacade = getFacadeForScriptDependencies(files.toSet())
                 ModuleResolutionFacadeImpl(projectFacade, moduleInfo).createdFor(files, moduleInfo)
             }
             else -> null
@@ -208,6 +204,43 @@ internal class KotlinCacheServiceForScripts(
 
         return synchronized(cachedValue) {
             cachedValue.get(files)
+        }
+    }
+
+    private val scriptDependenciesCacheProvider = CachedValueProvider {
+        CachedValueProvider.Result(
+            object : SLRUCache<Set<KtFile>, ProjectResolutionFacade>(10, 5) {
+                override fun createValue(files: Set<KtFile>) = createFacadeForScriptDependencies(files)
+            },
+            *dependenciesTrackers.toTypedArray()
+        )
+    }
+
+    private fun getFacadeForScriptDependencies(files: Set<KtFile>): ProjectResolutionFacade {
+        val cachedValue = CachedValuesManager.getManager(project).getCachedValue(project, scriptDependenciesCacheProvider)
+
+        return synchronized(cachedValue) {
+            cachedValue.get(files)
+        }
+    }
+
+    private fun createFacadeForScriptDependencies(files: Set<KtFile>): ProjectResolutionFacade {
+        // we assume that all files come from the same module
+        val moduleInfo = files.map(KtFile::getModuleInfo).toSet().single()
+
+        val globalFacade = getOrBuildScriptsGlobalFacade()
+        return when (moduleInfo) {
+            is ScriptDependenciesInfo -> wrapWitSyntheticFiles(
+                globalFacade.facadeForDependencies,
+                resolverForScriptDependenciesName,
+                files
+            )
+            is ScriptDependenciesSourceInfo -> wrapWitSyntheticFiles(
+                globalFacade.facadeForSources,
+                resolverForScriptDependenciesSourcesName,
+                files
+            )
+            else -> throw IllegalStateException("Unknown ModuleInfo for script dependencies ${moduleInfo::class.java}")
         }
     }
 
