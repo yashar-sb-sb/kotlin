@@ -36,7 +36,7 @@ internal class KotlinCacheServiceForScripts(
             }
             isScriptDependencies(moduleInfo) -> {
                 val projectFacade = wrapWitSyntheticFiles(
-                    facadeForScriptDependenciesForProject,
+                    getOrBuildScriptsGlobalFacade().facadeForDependencies,
                     ResolverForProject.resolverForScriptDependenciesName,
                     files.toSet()
                 )
@@ -48,34 +48,85 @@ internal class KotlinCacheServiceForScripts(
 
     fun getFacadeForScriptDependencies(moduleInfo: IdeaModuleInfo): ResolutionFacade? {
         val projectFacade = when (moduleInfo) {
-            is ScriptDependenciesInfo.ForProject,
-            is ScriptDependenciesSourceInfo.ForProject -> facadeForScriptDependenciesForProject
+            is ScriptDependenciesInfo.ForProject -> getOrBuildScriptsGlobalFacade().facadeForDependencies
+            is ScriptDependenciesSourceInfo.ForProject -> getOrBuildScriptsGlobalFacade().facadeForSources
             is ScriptDependenciesInfo.ForFile -> createFacadeForScriptDependencies(moduleInfo)
             else -> return null
         }
         return ModuleResolutionFacadeImpl(projectFacade, moduleInfo)
     }
 
-    private val facadeForScriptDependenciesForProject = createFacadeForScriptDependencies(ScriptDependenciesInfo.ForProject(project))
+    private val dependenciesTrackers = listOf(
+        LibraryModificationTracker.getInstance(project),
+        ProjectRootModificationTracker.getInstance(project),
+        ScriptDependenciesModificationTracker.getInstance(project)
+    )
 
-    private fun createFacadeForScriptDependencies(dependenciesModuleInfo: ScriptDependenciesInfo): ProjectResolutionFacade {
-        val sdk = dependenciesModuleInfo.sdk
+    @Synchronized
+    private fun getOrBuildScriptsGlobalFacade(): ScriptsGlobalFacade {
+        val sdk = ScriptDependenciesInfo.ForProject(project).sdk
+        val platform = JvmPlatforms.defaultJvmPlatform // TODO: Js scripts?
+        val settings = PlatformAnalysisSettings.create(
+            project, platform, sdk, true,
+            LanguageFeature.ReleaseCoroutines.defaultState == LanguageFeature.State.ENABLED
+        )
+        return globalScriptFacadesPerPlatformAndSdk[settings]
+    }
+
+    private val globalScriptFacadesPerPlatformAndSdk: SLRUCache<PlatformAnalysisSettings, ScriptsGlobalFacade> =
+        object : SLRUCache<PlatformAnalysisSettings, ScriptsGlobalFacade>(2, 2) {
+            override fun createValue(settings: PlatformAnalysisSettings): ScriptsGlobalFacade {
+                return ScriptsGlobalFacade(settings)
+            }
+        }
+
+    private inner class ScriptsGlobalFacade(settings: PlatformAnalysisSettings) {
+        private val dependenciesContext = facadeForSdk(settings).globalContext
+            .contextWithCompositeExceptionTracker(project, ResolverForProject.resolverForScriptDependenciesName)
+
+        val facadeForDependencies = ProjectResolutionFacade(
+            debugString = "facade for script dependencies",
+            resolverDebugName = "${ResolverForProject.resolverForScriptDependenciesName} with settings=${settings}",
+            project = project,
+            globalContext = dependenciesContext,
+            settings = settings,
+            moduleFilter = { it is ScriptDependenciesInfo.ForProject },
+            allModules = ScriptDependenciesInfo.ForProject(project).dependencies(),
+            dependencies = dependenciesTrackers,
+            invalidateOnOOCB = false,
+            reuseDataFrom = facadeForSdk(settings),
+            builtInsCache = facadeForSdk(settings).builtInsCache
+        )
+
+        private val sourcesContext = dependenciesContext
+            .contextWithCompositeExceptionTracker(project, ResolverForProject.resolverForScriptDependenciesSourcesName)
+
+        val facadeForSources = ProjectResolutionFacade(
+            debugString = "facade for script dependencies sources",
+            resolverDebugName = "${ResolverForProject.resolverForScriptDependenciesSourcesName} with settings=${settings}",
+            project = project,
+            globalContext = sourcesContext,
+            settings = settings,
+            reuseDataFrom = facadeForDependencies,
+            moduleFilter = { it is ScriptDependenciesSourceInfo.ForProject },
+            allModules = ScriptDependenciesSourceInfo.ForProject(project).dependencies(),
+            invalidateOnOOCB = false,
+            dependencies = dependenciesTrackers,
+            builtInsCache = facadeForDependencies.builtInsCache
+        )
+    }
+
+    private fun createFacadeForScriptDependencies(moduleInfo: ScriptDependenciesInfo.ForFile): ProjectResolutionFacade {
+        val sdk = moduleInfo.sdk
         val platform = JvmPlatforms.defaultJvmPlatform // TODO: Js scripts?
         val settings = PlatformAnalysisSettings.create(
             project, platform, sdk, true,
             LanguageFeature.ReleaseCoroutines.defaultState == LanguageFeature.State.ENABLED
         )
 
-        val dependenciesForScriptDependencies = listOf(
-            LibraryModificationTracker.getInstance(project),
-            ProjectRootModificationTracker.getInstance(project),
-            ScriptDependenciesModificationTracker.getInstance(project)
-        )
-
-        val scriptFile = (dependenciesModuleInfo as? ScriptDependenciesInfo.ForFile)?.scriptFile
-        val relatedModules = scriptFile?.let { ScriptAdditionalIdeaDependenciesProvider.getRelatedModules(it, project) }
+        val relatedModules = ScriptAdditionalIdeaDependenciesProvider.getRelatedModules(moduleInfo.scriptFile, project)
         val globalFacade =
-            if (relatedModules?.isNotEmpty() == true) {
+            if (relatedModules.isNotEmpty()) {
                 facadeForModules(settings)
             } else {
                 facadeForSdk(settings)
@@ -87,11 +138,11 @@ internal class KotlinCacheServiceForScripts(
             ResolverForProject.resolverForScriptDependenciesName,
             project, globalContext, settings,
             reuseDataFrom = globalFacade,
-            allModules = dependenciesModuleInfo.dependencies(),
+            allModules = moduleInfo.dependencies(),
             //TODO: provide correct trackers
-            dependencies = dependenciesForScriptDependencies,
-            moduleFilter = { it == dependenciesModuleInfo },
-            invalidateOnOOCB = true,
+            dependencies = dependenciesTrackers,
+            moduleFilter = { it == moduleInfo },
+            invalidateOnOOCB = false,
             builtInsCache = globalFacade.builtInsCache
         )
     }
@@ -180,6 +231,4 @@ internal class KotlinCacheServiceForScripts(
         }
         return false
     }
-
-
 }
