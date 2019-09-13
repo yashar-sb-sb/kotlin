@@ -411,13 +411,12 @@ abstract class KtLightClassForSourceDeclaration(
         private fun computeLightClassCachedValue(
             classOrObject: KtClassOrObject
         ): CachedValue<LightClassDataHolder.ForClass> {
-            var value = classOrObject.getUserData(JAVA_API_STUB)
-            if (value == null) {
+            val value = classOrObject.getUserData(JAVA_API_STUB) ?: run {
                 val manager = CachedValuesManager.getManager(classOrObject.project)
-                value = manager.createCachedValue(
+                val cachedValue = manager.createCachedValue(
                     LightClassDataProviderForClassOrObject(classOrObject), false
                 )
-                value = classOrObject.putUserDataIfAbsent(JAVA_API_STUB, value!!)
+                classOrObject.putUserDataIfAbsent(JAVA_API_STUB, cachedValue)
             }
             return value
         }

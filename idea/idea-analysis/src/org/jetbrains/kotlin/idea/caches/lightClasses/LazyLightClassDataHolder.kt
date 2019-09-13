@@ -51,8 +51,6 @@ sealed class LazyLightClassDataHolder(
         dummyContextProvider?.let { provider -> provider()?.let { context -> builder.invoke(context).stub } }
     }
 
-    // TODO: [VD] I have quite big concerns to drop inexactStub as it usually is built
-    //  a bit earlier than exactResultLazyValue
     private val inexactStub: PsiJavaFileStub?
         get() = if (exactResultLazyValue.isInitialized()) null else lazyInexactStub
 
@@ -60,6 +58,8 @@ sealed class LazyLightClassDataHolder(
 
     override val extraDiagnostics: Diagnostics
         get() = diagnosticsHolderProvider().getOrCompute(this) {
+            // Force lazy diagnostics computation because otherwise a lot of memory is retained by computation.
+            // NB: Laziness here is not crucial anyway since somebody already has requested diagnostics and we hope one will use them
             _builderExactContextProvider.diagnostics.takeUnless { it.isEmpty() } ?: Diagnostics.EMPTY
         }
 

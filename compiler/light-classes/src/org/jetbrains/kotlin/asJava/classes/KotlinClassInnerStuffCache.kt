@@ -26,7 +26,7 @@ class KotlinClassInnerStuffCache(val myClass: PsiExtensibleClass, externalDepend
     private val myTracker = SimpleModificationTracker()
     private val dependencies: List<Any> = externalDependencies + myTracker
 
-    fun <T> get(initializer: () -> T) = object : Lazy<T> {
+    fun <T : Any> get(initializer: () -> T) = object : Lazy<T> {
         // Note: holder is used as initialization monitor as well
         private val holder = lazyPub {
             PsiCachedValueImpl(PsiManager.getInstance(myClass.project),
@@ -36,7 +36,7 @@ class KotlinClassInnerStuffCache(val myClass: PsiExtensibleClass, externalDepend
                                })
         }
 
-        private fun computeValue(): T = holder.value.value ?: error("holder has null in initializer")
+        private fun computeValue(): T = holder.value.value ?: error("holder has not null in initializer")
 
         override val value: T
             get() {
