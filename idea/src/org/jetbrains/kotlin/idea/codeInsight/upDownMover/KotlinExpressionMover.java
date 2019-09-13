@@ -362,6 +362,10 @@ public class KotlinExpressionMover extends AbstractKotlinUpDownMover {
             @Nullable PsiElement start, @Nullable PsiElement end, @NotNull PsiElement sibling,
             @NotNull Editor editor, boolean down
     ) {
+        if (sibling instanceof PsiComment) {
+            return null;
+        }
+
         if (!(start == end && start == sibling)) {
             return null;
         }
