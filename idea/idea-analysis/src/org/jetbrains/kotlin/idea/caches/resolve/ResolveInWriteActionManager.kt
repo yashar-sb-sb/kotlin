@@ -44,7 +44,7 @@ internal object ResolveInWriteActionManager {
 
         val application = ApplicationManager.getApplication() ?: return
 
-        if (!application.isWriteAccessAllowed) return
+        if (!application.isDispatchThread) return
 
         if (application.isUnitTestMode) {
             if (!isForceCheckInTests.get()) return
@@ -66,7 +66,7 @@ internal object ResolveInWriteActionManager {
 
     internal inline fun <T> runWithResolveAllowedInWriteAction(runnable: () -> T): T {
         val wasSet =
-            if (ApplicationManager.getApplication()?.isWriteAccessAllowed == true && isResolveInWriteActionAllowed.get() == false) {
+            if (ApplicationManager.getApplication()?.isDispatchThread == true && isResolveInWriteActionAllowed.get() == false) {
                 isResolveInWriteActionAllowed.set(true)
                 true
             } else {
