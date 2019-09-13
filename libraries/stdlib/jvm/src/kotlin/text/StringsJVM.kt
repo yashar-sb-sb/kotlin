@@ -471,7 +471,8 @@ public actual fun String.compareTo(other: String, ignoreCase: Boolean = false): 
 /**
  * Returns `true` if this string is equal to the contents of the specified [CharSequence], `false` otherwise.
  *
- * This method does not synchronize on the specified [CharSequence] and the caller is responsible for the thread-safety.
+ * Unlike the overload that accepts an argument of type [StringBuffer],
+ * this function does not compare this string and the specified [CharSequence] thread-safely.
  */
 @kotlin.internal.InlineOnly
 public inline fun String.contentEquals(charSequence: CharSequence): Boolean = (this as java.lang.String).contentEquals(charSequence)
@@ -479,7 +480,8 @@ public inline fun String.contentEquals(charSequence: CharSequence): Boolean = (t
 /**
  * Returns `true` if this string is equal to the contents of the specified [StringBuffer], `false` otherwise.
  *
- * This method synchronizes on the specified [StringBuffer].
+ * This function compares this string and the specified [StringBuffer] inside a synchronized block
+ * that acquires the intrinsic lock associated with the [StringBuffer].
  */
 @kotlin.internal.InlineOnly
 public inline fun String.contentEquals(stringBuilder: StringBuffer): Boolean = (this as java.lang.String).contentEquals(stringBuilder)
