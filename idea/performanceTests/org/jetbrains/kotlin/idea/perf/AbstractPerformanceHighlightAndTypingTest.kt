@@ -23,6 +23,7 @@ import org.jetbrains.kotlin.idea.highlighter.AbstractHighlightAndTypingTest.Comp
 import org.jetbrains.kotlin.idea.highlighter.AbstractHighlightAndTypingTest.Companion.enableInspections
 import org.jetbrains.kotlin.idea.highlighter.AbstractHighlightingTest
 import org.jetbrains.kotlin.idea.test.KotlinLightCodeInsightFixtureTestCase
+import org.jetbrains.kotlin.idea.testFramework.commitAllDocuments
 import org.jetbrains.kotlin.test.InTextDirectivesUtils
 import java.io.File
 
