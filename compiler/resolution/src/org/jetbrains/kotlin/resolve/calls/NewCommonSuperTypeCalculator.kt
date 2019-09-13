@@ -22,8 +22,6 @@ import org.jetbrains.kotlin.types.AbstractNullabilityChecker.hasPathByNotMarkedN
 import org.jetbrains.kotlin.types.model.*
 
 object NewCommonSuperTypeCalculator {
-
-
     // TODO: Bridge for old calls
     fun commonSuperType(types: List<UnwrappedType>): UnwrappedType {
         return SimpleClassicTypeSystemContext.commonSuperType(types) as UnwrappedType
@@ -55,22 +53,29 @@ object NewCommonSuperTypeCalculator {
             }
         }
 
-        val lowerSuperType = commonSuperTypeForSimpleTypes(lowers, depth)
+        val contextStubTypesEqualToAnything = newBaseTypeCheckerContext(errorTypesEqualToAnything = false, stubTypesEqualToAnything = true)
+        val contextStubTypesNotEqual = newBaseTypeCheckerContext(errorTypesEqualToAnything = false, stubTypesEqualToAnything = false)
+
+        val lowerSuperType = commonSuperTypeForSimpleTypes(lowers, depth, contextStubTypesEqualToAnything, contextStubTypesNotEqual)
         if (!thereIsFlexibleTypes) return lowerSuperType
 
-        val upperSuperType = commonSuperTypeForSimpleTypes(types.map { it.upperBoundIfFlexible() }, depth)
+        val upperSuperType = commonSuperTypeForSimpleTypes(
+            types.map { it.upperBoundIfFlexible() }, depth, contextStubTypesEqualToAnything, contextStubTypesNotEqual
+        )
         return createFlexibleType(lowerSuperType, upperSuperType)
     }
 
     private fun TypeSystemCommonSuperTypesContext.commonSuperTypeForSimpleTypes(
         types: List<SimpleTypeMarker>,
-        depth: Int
+        depth: Int,
+        contextStubTypesEqualToAnything: AbstractTypeCheckerContext,
+        contextStubTypesNotEqual: AbstractTypeCheckerContext
     ): SimpleTypeMarker {
         // i.e. result type also should be marked nullable
         val notAllNotNull = types.any { !AbstractNullabilityChecker.isSubtypeOfAny(this, it) }
         val notNullTypes = if (notAllNotNull) types.map { it.withNullability(false) } else types
 
-        val commonSuperType = commonSuperTypeForNotNullTypes(notNullTypes, depth)
+        val commonSuperType = commonSuperTypeForNotNullTypes(notNullTypes, depth, contextStubTypesEqualToAnything, contextStubTypesNotEqual)
         return if (notAllNotNull)
             refineNullabilityForUndefinedNullability(types, commonSuperType) ?: commonSuperType.withNullability(true)
         else
@@ -89,11 +94,14 @@ object NewCommonSuperTypeCalculator {
     }
 
     // Makes representative sample, i.e. (A, B, A) -> (A, B)
-    private fun TypeSystemCommonSuperTypesContext.uniquify(types: List<SimpleTypeMarker>): List<SimpleTypeMarker> {
+    private fun TypeSystemCommonSuperTypesContext.uniquify(
+        types: List<SimpleTypeMarker>,
+        contextStubTypesNotEqual: AbstractTypeCheckerContext
+    ): List<SimpleTypeMarker> {
         val uniqueTypes = arrayListOf<SimpleTypeMarker>()
         for (type in types) {
             val isNewUniqueType = uniqueTypes.all {
-                !AbstractTypeChecker.equalTypes(this, it, type, stubTypesEqualToAnything = false) ||
+                !AbstractTypeChecker.equalTypes(contextStubTypesNotEqual, it, type) ||
                         it.typeConstructor().isIntegerLiteralTypeConstructor()
             }
             if (isNewUniqueType) {
@@ -105,15 +113,16 @@ object NewCommonSuperTypeCalculator {
 
     // This function leaves only supertypes, i.e. A0 is a strong supertype for A iff A != A0 && A <: A0
     // Explanation: consider types (A : A0, B : B0, A0, B0), then CST(A, B, A0, B0) == CST(CST(A, A0), CST(B, B0)) == CST(A0, B0)
-    private fun TypeSystemCommonSuperTypesContext.filterSupertypes(list: List<SimpleTypeMarker>): List<SimpleTypeMarker> {
+    private fun filterSupertypes(
+        list: List<SimpleTypeMarker>,
+        contextStubTypesNotEqual: AbstractTypeCheckerContext
+    ): List<SimpleTypeMarker> {
         val supertypes = list.toMutableList()
         val iterator = supertypes.iterator()
         while (iterator.hasNext()) {
             val potentialSubtype = iterator.next()
             val isSubtype = supertypes.any { supertype ->
-                supertype !== potentialSubtype && AbstractTypeChecker.isSubtypeOf(
-                    this, potentialSubtype, supertype, stubTypesEqualToAnything = false
-                )
+                supertype !== potentialSubtype && AbstractTypeChecker.isSubtypeOf(contextStubTypesNotEqual, potentialSubtype, supertype)
             }
 
             if (isSubtype) iterator.remove()
@@ -130,7 +139,9 @@ object NewCommonSuperTypeCalculator {
     * */
     private fun TypeSystemCommonSuperTypesContext.commonSuperTypeForNotNullTypes(
         types: List<SimpleTypeMarker>,
-        depth: Int
+        depth: Int,
+        contextStubTypesEqualToAnything: AbstractTypeCheckerContext,
+        contextStubTypesNotEqual: AbstractTypeCheckerContext
     ): SimpleTypeMarker {
         if (types.size == 1) return types.single()
 
@@ -141,10 +152,10 @@ object NewCommonSuperTypeCalculator {
             "There should be at least one non-stub type to compute common supertype but there are: $types"
         }
 
-        val uniqueTypes = uniquify(nonStubTypes)
+        val uniqueTypes = uniquify(nonStubTypes, contextStubTypesNotEqual)
         if (uniqueTypes.size == 1) return uniqueTypes.single()
 
-        val explicitSupertypes = filterSupertypes(uniqueTypes)
+        val explicitSupertypes = filterSupertypes(uniqueTypes, contextStubTypesNotEqual)
         if (explicitSupertypes.size == 1) return explicitSupertypes.single()
         findErrorTypeInSupertypesIfItIsNeeded(explicitSupertypes)?.let { return it }
 
@@ -164,9 +175,8 @@ object NewCommonSuperTypeCalculator {
     private fun TypeSystemCommonSuperTypesContext.findSuperTypeConstructorsAndIntersectResult(
         types: List<SimpleTypeMarker>,
         depth: Int
-    ): SimpleTypeMarker {
-        return intersectTypes(allCommonSuperTypeConstructors(types).map { superTypeWithGivenConstructor(types, it, depth) })
-    }
+    ): SimpleTypeMarker =
+        intersectTypes(allCommonSuperTypeConstructors(types).map { superTypeWithGivenConstructor(types, it, depth) })
 
     /**
      * Note that if there is captured type C, then no one else is not subtype of C => lowerType cannot help here
