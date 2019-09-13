@@ -108,7 +108,7 @@ class FirTypeDeserializer(
         get() = typeParameterDescriptors.values.toList()
 
 
-    fun FirClassLikeSymbol<*>.typeParameters(): List<ConeTypeParameterSymbol> = fir.typeParameters.map { it.symbol }
+    fun FirClassLikeSymbol<*>.typeParameters(): List<FirTypeParameterSymbol> = fir.typeParameters.map { it.symbol }
 
     fun simpleType(proto: ProtoBuf.Type): ConeLookupTagBasedType? {
 

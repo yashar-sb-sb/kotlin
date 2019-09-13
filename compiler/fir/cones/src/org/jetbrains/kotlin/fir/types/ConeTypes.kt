@@ -86,9 +86,11 @@ val ConeKotlinType.isMarkedNullable: Boolean get() = nullability == ConeNullabil
 
 typealias ConeKotlinErrorType = ConeClassErrorType
 
+class ConeClassLikeErrorLookupTag(override val classId: ClassId) : ConeClassLikeLookupTag()
+
 class ConeClassErrorType(val reason: String) : ConeClassLikeType() {
     override val lookupTag: ConeClassLikeLookupTag
-        get() = ConeClassLikeLookupTagImpl(ClassId.fromString("<error>"))
+        get() = ConeClassLikeErrorLookupTag(ClassId.fromString("<error>"))
 
     override val typeArguments: Array<out ConeKotlinTypeProjection>
         get() = EMPTY_ARRAY

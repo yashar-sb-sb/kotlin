@@ -665,7 +665,7 @@ internal class Fir2IrVisitor(
     private fun FirReference.statementOrigin(): IrStatementOrigin? {
         return when (this) {
             is FirPropertyFromParameterCallableReference -> IrStatementOrigin.INITIALIZE_PROPERTY_FROM_PARAMETER
-            is FirResolvedCallableReference -> when (coneSymbol) {
+            is FirResolvedCallableReference -> when (resolvedSymbol) {
                 is FirAccessorSymbol, is SyntheticPropertySymbol -> IrStatementOrigin.GET_PROPERTY
                 else -> null
             }

@@ -25,10 +25,6 @@ import org.jetbrains.kotlin.fir.scopes.impl.FirLocalScope
 import org.jetbrains.kotlin.fir.scopes.impl.FirTopLevelDeclaredMemberScope
 import org.jetbrains.kotlin.fir.scopes.impl.withReplacedConeType
 import org.jetbrains.kotlin.fir.symbols.*
-import org.jetbrains.kotlin.fir.symbols.impl.FirBackingFieldSymbol
-import org.jetbrains.kotlin.fir.symbols.impl.FirCallableSymbol
-import org.jetbrains.kotlin.fir.symbols.impl.FirPropertySymbol
-import org.jetbrains.kotlin.fir.symbols.impl.FirVariableSymbol
 import org.jetbrains.kotlin.fir.types.*
 import org.jetbrains.kotlin.fir.types.impl.*
 import org.jetbrains.kotlin.fir.visitors.CompositeTransformResult
@@ -230,7 +226,7 @@ open class FirBodyResolveTransformer(
                 qualifiedAccessExpression
             }
             is FirDelegateFieldReference -> {
-                val delegateFieldSymbol = callee.coneSymbol
+                val delegateFieldSymbol = callee.resolvedSymbol
                 qualifiedAccessExpression.resultType = delegateFieldSymbol.delegate.typeRef
                 qualifiedAccessExpression
             }
@@ -1012,10 +1008,7 @@ class FirBodyResolveTransformerAdapter : FirTransformer<Nothing?>() {
 }
 
 
-inline fun <reified T : FirElement> ConeSymbol.firUnsafe(): T {
-    require(this is FirBasedSymbol<*>) {
-        "Not a fir based symbol: ${this}"
-    }
+inline fun <reified T : FirElement> FirBasedSymbol<*>.firUnsafe(): T {
     val fir = this.fir
     require(fir is T) {
         "Not an expected fir element type = ${T::class}, symbol = ${this}, fir = ${fir.renderWithType()}"
@@ -1023,8 +1016,7 @@ inline fun <reified T : FirElement> ConeSymbol.firUnsafe(): T {
     return fir
 }
 
-inline fun <reified T : FirElement> ConeSymbol.firSafeNullable(): T? {
-    if (this !is FirBasedSymbol<*>) return null
+inline fun <reified T : FirElement> FirBasedSymbol<*>.firSafeNullable(): T? {
     return fir as? T
 }
 
