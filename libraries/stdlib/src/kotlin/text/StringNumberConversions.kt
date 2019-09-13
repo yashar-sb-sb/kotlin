@@ -94,7 +94,7 @@ public fun String.toIntOrNull(radix: Int): Int? {
     }
 
 
-    val limitForMaxRadix = -59652323  //  limit / 36
+    val limitForMaxRadix = (-Int.MAX_VALUE) / 36
 
     var limitBeforeMul = limitForMaxRadix
     var result = 0
@@ -169,7 +169,7 @@ public fun String.toLongOrNull(radix: Int): Long? {
     }
 
 
-    val limitForMaxRadix = -256204778801521550L  //  limit / 36
+    val limitForMaxRadix = (-Long.MAX_VALUE) / 36
 
     var limitBeforeMul = limitForMaxRadix
     var result = 0L
