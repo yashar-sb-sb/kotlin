@@ -8,13 +8,13 @@ package org.jetbrains.kotlin.nj2k.conversions
 import org.jetbrains.kotlin.j2k.ast.Nullability
 import org.jetbrains.kotlin.nj2k.NewJ2kConverterContext
 import org.jetbrains.kotlin.nj2k.tree.*
-import org.jetbrains.kotlin.nj2k.tree.impl.JKAnnotationImpl
-import org.jetbrains.kotlin.nj2k.tree.impl.JKJavaArrayTypeImpl
-import org.jetbrains.kotlin.nj2k.tree.impl.JKTypeElementImpl
+import org.jetbrains.kotlin.nj2k.types.JKClassType
+import org.jetbrains.kotlin.nj2k.types.JKJavaArrayType
+import org.jetbrains.kotlin.nj2k.types.updateNullability
 
 
 //TODO temporary
-class MainFunctionConversion(private val context: NewJ2kConverterContext) : RecursiveApplicableConversionBase() {
+class MainFunctionConversion(context: NewJ2kConverterContext) : RecursiveApplicableConversionBase(context) {
     override fun applyToElement(element: JKTreeElement): JKTreeElement {
         if (element !is JKMethod) return recurse(element)
         if (element.isMainFunctionDeclaration()) {
@@ -22,15 +22,15 @@ class MainFunctionConversion(private val context: NewJ2kConverterContext) : Recu
                 val oldType = type.type as JKJavaArrayType
                 val oldTypeParameter = oldType.type as JKClassType
                 val newType =
-                    JKJavaArrayTypeImpl(
+                    JKJavaArrayType(
                         oldTypeParameter.updateNullability(Nullability.NotNull),
                         Nullability.NotNull
                     )
-                type = JKTypeElementImpl(newType)
+                type = JKTypeElement(newType)
             }
             element.annotationList.annotations +=
-                JKAnnotationImpl(
-                    context.symbolProvider.provideClassSymbol("kotlin.jvm.JvmStatic"),
+                JKAnnotation(
+                    symbolProvider.provideClassSymbol("kotlin.jvm.JvmStatic"),
                     emptyList()
                 )
         }

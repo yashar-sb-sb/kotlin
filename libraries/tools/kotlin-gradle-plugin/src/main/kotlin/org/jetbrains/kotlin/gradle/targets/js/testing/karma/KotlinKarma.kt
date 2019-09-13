@@ -16,16 +16,16 @@ import org.jetbrains.kotlin.gradle.internal.testing.TCServiceMessagesClient
 import org.jetbrains.kotlin.gradle.internal.testing.TCServiceMessagesClientSettings
 import org.jetbrains.kotlin.gradle.internal.testing.TCServiceMessagesTestExecutionSpec
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinJsCompilation
-import org.jetbrains.kotlin.gradle.targets.js.appendConfigsFromDir
-import org.jetbrains.kotlin.gradle.targets.js.internal.parseNodeJsStackTraceAsJvm
 import org.jetbrains.kotlin.gradle.targets.js.NpmPackageVersion
 import org.jetbrains.kotlin.gradle.targets.js.RequiredKotlinJsDependency
+import org.jetbrains.kotlin.gradle.targets.js.appendConfigsFromDir
+import org.jetbrains.kotlin.gradle.targets.js.internal.parseNodeJsStackTraceAsJvm
 import org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsRootPlugin
 import org.jetbrains.kotlin.gradle.targets.js.npm.npmProject
 import org.jetbrains.kotlin.gradle.targets.js.testing.KotlinJsTest
 import org.jetbrains.kotlin.gradle.targets.js.testing.KotlinJsTestFramework
 import org.jetbrains.kotlin.gradle.targets.js.testing.karma.KarmaConfig.CoverageReporter.Reporter
-import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfigWriter
+import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig
 import org.jetbrains.kotlin.gradle.testing.internal.reportsDir
 import org.slf4j.Logger
 import java.io.File
@@ -39,6 +39,7 @@ class KotlinKarma(override val compilation: KotlinJsCompilation) : KotlinJsTestF
     private val requiredDependencies = mutableSetOf<NpmPackageVersion>()
 
     private val configurators = mutableListOf<(KotlinJsTest) -> Unit>()
+    private val envJsCollector = mutableMapOf<String, String>()
     private val confJsWriters = mutableListOf<(Appendable) -> Unit>()
     private var sourceMaps = false
     private var configDirectory: File? = project.projectDir.resolve("karma.config.d").takeIf { it.isDirectory }
@@ -77,11 +78,20 @@ class KotlinKarma(override val compilation: KotlinJsCompilation) : KotlinJsTestF
         configDirectory = dir
     }
 
-    fun useChrome() = useBrowser("Chrome", versions.karmaChromeLauncher)
+    fun useChrome() = useChromeWithPuppeteer(
+        id = "Chrome",
+        envVar = CHROME_BIN
+    )
 
-    fun useChromeCanary() = useBrowser("ChromeCanary", versions.karmaChromeLauncher)
+    fun useChromeCanary() = useChromeWithPuppeteer(
+        id = "ChromeCanary",
+        envVar = CHROME_CANARY_BIN
+    )
 
-    fun useChromeHeadless() = useBrowser("ChromeHeadless", versions.karmaChromeLauncher)
+    fun useChromeHeadless() = useChromeWithPuppeteer(
+        id = "ChromeHeadless",
+        envVar = CHROME_BIN
+    )
 
     fun usePhantomJS() = useBrowser("PhantomJS", versions.karmaPhantomJsLauncher)
 
@@ -98,6 +108,21 @@ class KotlinKarma(override val compilation: KotlinJsCompilation) : KotlinJsTestF
         requiredDependencies.add(dependency)
     }
 
+    private fun useChromeWithPuppeteer(
+        id: String,
+        envVar: String
+    ) {
+        usePuppeteer(envVar)
+        useBrowser(id, versions.karmaChromeLauncher)
+    }
+
+    private fun usePuppeteer(envVar: String) {
+        requiredDependencies.add(versions.puppeteer)
+
+        //language=JavaScript 1.8
+        envJsCollector[envVar] = "require('puppeteer').executablePath()"
+    }
+
     private fun useMocha() {
         requiredDependencies.add(versions.karmaMocha)
         requiredDependencies.add(versions.mocha)
@@ -108,19 +133,22 @@ class KotlinKarma(override val compilation: KotlinJsCompilation) : KotlinJsTestF
         requiredDependencies.add(versions.karmaWebpack)
         requiredDependencies.add(versions.webpack)
 
+        val webpackConfigWriter = KotlinWebpackConfig(
+            configDirectory = project.projectDir.resolve("webpack.config.d").takeIf { it.isDirectory },
+            sourceMaps = true,
+            export = false,
+            progressReporter = true,
+            progressReporterPathFilter = nodeJs.rootPackageDir.absolutePath
+        )
+        requiredDependencies.addAll(webpackConfigWriter.getRequiredDependencies(versions))
+
         addPreprocessor("webpack")
         confJsWriters.add {
             it.appendln()
             it.appendln("// webpack config")
             it.appendln("function createWebpackConfig() {")
 
-            KotlinWebpackConfigWriter(
-                configDirectory = project.projectDir.resolve("webpack.config.d").takeIf { it.isDirectory },
-                sourceMaps = true,
-                export = false,
-                progressReporter = true,
-                progressReporterPathFilter = nodeJs.rootPackageDir.absolutePath
-            ).appendTo(it)
+            webpackConfigWriter.appendTo(it)
 
             it.appendln("   return config;")
             it.appendln("}")
@@ -223,6 +251,13 @@ class KotlinKarma(override val compilation: KotlinJsCompilation) : KotlinJsTestF
 
         val karmaConfJs = npmProject.dir.resolve("karma.conf.js")
         karmaConfJs.printWriter().use { confWriter ->
+            confWriter.println("// environment variables")
+            envJsCollector.forEach { (envVar, value) ->
+                //language=JavaScript 1.8
+                confWriter.println("process.env.$envVar = $value")
+            }
+
+            confWriter.println()
             confWriter.println("module.exports = function(config) {")
             confWriter.println()
 
@@ -314,5 +349,10 @@ class KotlinKarma(override val compilation: KotlinJsCompilation) : KotlinJsTestF
         appendln()
         appendConfigsFromDir(configDirectory)
         appendln()
+    }
+
+    companion object {
+        const val CHROME_BIN = "CHROME_BIN"
+        const val CHROME_CANARY_BIN = "CHROME_CANARY_BIN"
     }
 }

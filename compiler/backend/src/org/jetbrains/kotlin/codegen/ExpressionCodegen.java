@@ -74,13 +74,13 @@ import org.jetbrains.kotlin.resolve.jvm.*;
 import org.jetbrains.kotlin.resolve.jvm.diagnostics.JvmDeclarationOriginKt;
 import org.jetbrains.kotlin.resolve.jvm.jvmSignature.JvmMethodParameterKind;
 import org.jetbrains.kotlin.resolve.jvm.jvmSignature.JvmMethodParameterSignature;
+import org.jetbrains.kotlin.resolve.jvm.jvmSignature.JvmMethodSignature;
 import org.jetbrains.kotlin.resolve.scopes.receivers.*;
 import org.jetbrains.kotlin.synthetic.SyntheticJavaPropertyDescriptor;
-import org.jetbrains.kotlin.types.KotlinType;
-import org.jetbrains.kotlin.types.SimpleType;
-import org.jetbrains.kotlin.types.TypeProjection;
-import org.jetbrains.kotlin.types.TypeUtils;
+import org.jetbrains.kotlin.types.*;
+import org.jetbrains.kotlin.types.checker.ClassicTypeSystemContextImpl;
 import org.jetbrains.kotlin.types.expressions.DoubleColonLHS;
+import org.jetbrains.kotlin.types.model.TypeParameterMarker;
 import org.jetbrains.kotlin.types.typesApproximation.CapturedTypeApproximationKt;
 import org.jetbrains.kotlin.util.OperatorNameConventions;
 import org.jetbrains.org.objectweb.asm.Label;
@@ -92,6 +92,7 @@ import org.jetbrains.org.objectweb.asm.commons.Method;
 
 import java.util.*;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static org.jetbrains.kotlin.builtins.KotlinBuiltIns.isInt;
 import static org.jetbrains.kotlin.codegen.AsmUtil.*;
@@ -123,6 +124,7 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
     private final TailRecursionCodegen tailRecursionCodegen;
     public final CallGenerator defaultCallGenerator = new CallGenerator.DefaultCallGenerator(this);
     private final SwitchCodegenProvider switchCodegenProvider;
+    private final TypeSystemCommonBackendContext typeSystem;
 
     private final Stack<BlockStackElement> blockStackElements = new Stack<>();
 
@@ -155,6 +157,7 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
         this.parentCodegen = parentCodegen;
         this.tailRecursionCodegen = new TailRecursionCodegen(context, this, this.v, state);
         this.switchCodegenProvider = new SwitchCodegenProvider(this);
+        this.typeSystem = new ClassicTypeSystemContextImpl(state.getModule().getBuiltIns());
     }
 
     @Nullable
@@ -1031,7 +1034,7 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
     }
 
     @NotNull
-    public StackValue putClosureInstanceOnStack(
+    private StackValue putClosureInstanceOnStack(
             @NotNull ClosureCodegen closureCodegen,
             @Nullable StackValue functionReferenceReceiver
     ) {
@@ -2620,7 +2623,7 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
     private CallGenerator getOrCreateCallGenerator(
             @NotNull CallableDescriptor descriptor,
             @Nullable KtElement callElement,
-            @Nullable TypeParameterMappings typeParameterMappings,
+            @Nullable TypeParameterMappings<KotlinType> typeParameterMappings,
             boolean isDefaultCompilation
     ) {
         if (callElement == null) return defaultCallGenerator;
@@ -2640,11 +2643,20 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
                         unwrapInitialSignatureDescriptor(DescriptorUtils.unwrapFakeOverride((FunctionDescriptor) descriptor.getOriginal())),
                         bindingContext, state
                 );
+
+        PsiSourceCompilerForInline sourceCompiler = new PsiSourceCompilerForInline(this, callElement);
+        FunctionDescriptor functionDescriptor =
+                InlineUtil.isArrayConstructorWithLambda(original)
+                ? FictitiousArrayConstructor.create((ConstructorDescriptor) original) : original.getOriginal();
+
+        sourceCompiler.initializeInlineFunctionContext(functionDescriptor);
+        JvmMethodSignature signature = typeMapper.mapSignatureWithGeneric(functionDescriptor, sourceCompiler.getContextKind());
+        Type methodOwner = typeMapper.mapImplementationOwner(functionDescriptor);
         if (isDefaultCompilation) {
-            return new InlineCodegenForDefaultBody(original, this, state, new PsiSourceCompilerForInline(this, callElement));
+            return new InlineCodegenForDefaultBody(functionDescriptor, this, state, methodOwner, signature, sourceCompiler);
         }
         else {
-            return new PsiInlineCodegen(this, state, original, typeParameterMappings, new PsiSourceCompilerForInline(this, callElement));
+            return new PsiInlineCodegen(this, state, functionDescriptor, methodOwner, signature, typeParameterMappings, sourceCompiler);
         }
     }
 
@@ -2661,14 +2673,15 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
     CallGenerator getOrCreateCallGenerator(@NotNull ResolvedCall<?> resolvedCall, @NotNull CallableDescriptor descriptor) {
         Map<TypeParameterDescriptor, KotlinType> typeArguments = getTypeArgumentsForResolvedCall(resolvedCall, descriptor);
 
-        TypeParameterMappings mappings = new TypeParameterMappings();
+        TypeParameterMappings<KotlinType> mappings = new TypeParameterMappings<>();
         for (Map.Entry<TypeParameterDescriptor, KotlinType> entry : typeArguments.entrySet()) {
             TypeParameterDescriptor key = entry.getKey();
             KotlinType type = entry.getValue();
 
             boolean isReified = key.isReified() || InlineUtil.isArrayConstructorWithLambda(resolvedCall.getResultingDescriptor());
 
-            Pair<TypeParameterDescriptor, ReificationArgument> typeParameterAndReificationArgument = extractReificationArgument(type);
+            Pair<TypeParameterMarker, ReificationArgument> typeParameterAndReificationArgument =
+                    extractReificationArgument(typeSystem, type);
             if (typeParameterAndReificationArgument == null) {
                 KotlinType approximatedType = CapturedTypeApproximationKt.approximateCapturedTypes(entry.getValue()).getUpper();
                 // type is not generic
@@ -4021,10 +4034,14 @@ public class ExpressionCodegen extends KtVisitor<StackValue, StackValue> impleme
             return StackValue.operation(base.type, base.kotlinType, v -> {
                 base.put(base.type, base.kotlinType, v);
                 v.dup();
-                Label ok = new Label();
-                v.ifnonnull(ok);
-                v.invokestatic(IntrinsicMethods.INTRINSICS_CLASS_NAME, "throwNpe", "()V", false);
-                v.mark(ok);
+                if (state.getLanguageVersionSettings().getApiVersion().compareTo(ApiVersion.KOTLIN_1_4) >= 0) {
+                    v.invokestatic(IntrinsicMethods.INTRINSICS_CLASS_NAME, "checkNotNull", "(Ljava/lang/Object;)V", false);
+                } else {
+                    Label ok = new Label();
+                    v.ifnonnull(ok);
+                    v.invokestatic(IntrinsicMethods.INTRINSICS_CLASS_NAME, "throwNpe", "()V", false);
+                    v.mark(ok);
+                }
                 return null;
             });
         }
@@ -4768,8 +4785,7 @@ The "returned" value of try expression with no finally is either the last expres
                 return Unit.INSTANCE;
             }
 
-            CodegenUtilKt.generateAsCast(v, rightKotlinType, boxedRightType, safeAs,
-                                         state.getLanguageVersionSettings().supportsFeature(LanguageFeature.ReleaseCoroutines));
+            CodegenUtilKt.generateAsCast(v, rightKotlinType, boxedRightType, safeAs, state.getLanguageVersionSettings());
 
             return Unit.INSTANCE;
         });
@@ -4827,42 +4843,13 @@ The "returned" value of try expression with no finally is either the last expres
         });
     }
 
-    public void putReifiedOperationMarkerIfTypeIsReifiedParameter(
-            @NotNull KotlinType type, @NotNull ReifiedTypeInliner.OperationKind operationKind
-    ) {
-        putReifiedOperationMarkerIfTypeIsReifiedParameter(type, operationKind, v, this);
-    }
-
-    public static void putReifiedOperationMarkerIfTypeIsReifiedParameterWithoutPropagation(
-            @NotNull KotlinType type, @NotNull ReifiedTypeInliner.OperationKind operationKind, @NotNull InstructionAdapter v
-    ) {
-        putReifiedOperationMarkerIfTypeIsReifiedParameterImpl(type, operationKind, v, null);
-    }
-
-    public static void putReifiedOperationMarkerIfTypeIsReifiedParameter(
-            @NotNull KotlinType type, @NotNull ReifiedTypeInliner.OperationKind operationKind, @NotNull InstructionAdapter v,
-            @NotNull BaseExpressionCodegen codegen
-    ) {
-        putReifiedOperationMarkerIfTypeIsReifiedParameterImpl(type, operationKind, v, codegen);
-    }
-
-    private static void putReifiedOperationMarkerIfTypeIsReifiedParameterImpl(
-            @NotNull KotlinType type, @NotNull ReifiedTypeInliner.OperationKind operationKind, @NotNull InstructionAdapter v,
-            @Nullable BaseExpressionCodegen codegen
-    ) {
-        Pair<TypeParameterDescriptor, ReificationArgument> typeParameterAndReificationArgument = extractReificationArgument(type);
-        if (typeParameterAndReificationArgument != null && typeParameterAndReificationArgument.getFirst().isReified()) {
-            TypeParameterDescriptor typeParameterDescriptor = typeParameterAndReificationArgument.getFirst();
-            if (codegen != null) {
-                codegen.consumeReifiedOperationMarker(typeParameterDescriptor);
-            }
-            ReifiedTypeInliner.putReifiedOperationMarker(operationKind, typeParameterAndReificationArgument.getSecond(), v);
-        }
-    }
-
     @Override
     public void propagateChildReifiedTypeParametersUsages(@NotNull ReifiedTypeParametersUsages usages) {
-        parentCodegen.getReifiedTypeParametersUsages().propagateChildUsagesWithinContext(usages, context);
+        parentCodegen.getReifiedTypeParametersUsages().propagateChildUsagesWithinContext(
+                usages,
+                () -> context.getContextDescriptor().getTypeParameters().stream().filter(TypeParameterDescriptor::isReified).map(
+                        it -> it.getName().asString()).collect(Collectors.toSet())
+        );
     }
 
     @Override
@@ -5079,11 +5066,18 @@ The "returned" value of try expression with no finally is either the last expres
         return v;
     }
 
+    @NotNull
     @Override
-    public void consumeReifiedOperationMarker(@NotNull TypeParameterDescriptor typeParameterDescriptor) {
+    public TypeSystemCommonBackendContext getTypeSystem() {
+        return typeSystem;
+    }
+
+    @Override
+    public void consumeReifiedOperationMarker(@NotNull TypeParameterMarker typeParameter) {
+        assert typeParameter instanceof TypeParameterDescriptor : "Type parameter should be a descriptor: " + typeParameter;
+        TypeParameterDescriptor typeParameterDescriptor = (TypeParameterDescriptor) typeParameter;
         if (typeParameterDescriptor.getContainingDeclaration() != context.getContextDescriptor()) {
-            parentCodegen.getReifiedTypeParametersUsages().
-                    addUsedReifiedParameter(typeParameterDescriptor.getName().asString());
+            parentCodegen.getReifiedTypeParametersUsages().addUsedReifiedParameter(typeParameterDescriptor.getName().asString());
         }
     }
 }

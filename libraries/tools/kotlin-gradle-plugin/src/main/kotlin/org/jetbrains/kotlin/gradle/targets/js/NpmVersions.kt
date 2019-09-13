@@ -13,7 +13,7 @@ import org.jetbrains.kotlin.gradle.targets.js.npm.NpmDependency
  * Package versions used by tasks
  */
 class NpmVersions {
-    val dukat = NpmPackageVersion("dukat", "0.0.10")
+    val dukat = NpmPackageVersion("dukat", "0.0.16")
 
     val webpack = NpmPackageVersion("webpack", "4.29.6")
     val webpackCli = NpmPackageVersion("webpack-cli", "3.3.0")
@@ -42,6 +42,8 @@ class NpmVersions {
 
     val karmaSourceMapLoader = NpmPackageVersion("karma-sourcemap-loader", "0.3.7")
     val karmaSourceMapSupport = NpmPackageVersion("karma-source-map-support", "1.4.0")
+
+    val puppeteer = NpmPackageVersion("puppeteer", "1.19.0")
 
     val kotlinNodeJsTestRunner = KotlinGradleNpmPackage("test-nodejs-runner")
 

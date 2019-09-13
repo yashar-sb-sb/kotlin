@@ -53,10 +53,7 @@ import org.jetbrains.kotlin.idea.conversion.copy.AbstractLiteralKotlinToKotlinCo
 import org.jetbrains.kotlin.idea.conversion.copy.AbstractLiteralTextToKotlinCopyPasteTest
 import org.jetbrains.kotlin.idea.conversion.copy.AbstractTextJavaToKotlinCopyPasteConversionTest
 import org.jetbrains.kotlin.idea.coverage.AbstractKotlinCoverageOutputFilesTest
-import org.jetbrains.kotlin.idea.debugger.AbstractFileRankingTest
-import org.jetbrains.kotlin.idea.debugger.AbstractKotlinSteppingTest
-import org.jetbrains.kotlin.idea.debugger.AbstractPositionManagerTest
-import org.jetbrains.kotlin.idea.debugger.AbstractSmartStepIntoTest
+import org.jetbrains.kotlin.idea.debugger.*
 import org.jetbrains.kotlin.idea.debugger.evaluate.*
 import org.jetbrains.kotlin.idea.debugger.sequence.exec.AbstractSequenceTraceTestCase
 import org.jetbrains.kotlin.idea.decompiler.navigation.AbstractNavigateToDecompiledLibraryTest
@@ -146,6 +143,7 @@ import org.jetbrains.kotlin.nj2k.AbstractNewJavaToKotlinConverterSingleFileTest
 import org.jetbrains.kotlin.nj2k.AbstractNewJavaToKotlinCopyPasteConversionTest
 import org.jetbrains.kotlin.nj2k.AbstractTextNewJavaToKotlinCopyPasteConversionTest
 import org.jetbrains.kotlin.nj2k.inference.common.AbstractCommonConstraintCollectorTest
+import org.jetbrains.kotlin.nj2k.inference.mutability.AbstractMutabilityInferenceTest
 import org.jetbrains.kotlin.nj2k.inference.nullability.AbstractNullabilityInferenceTest
 import org.jetbrains.kotlin.noarg.AbstractBlackBoxCodegenTestForNoArg
 import org.jetbrains.kotlin.noarg.AbstractBytecodeListingTestForNoArg
@@ -248,7 +246,7 @@ fun main(args: Array<String>) {
         }
 
         testClass<AbstractNavigateToLibrarySourceTestWithJS> {
-            model("decompiler/navigation/usercode", testClassName ="UsercodeWithJSModule")
+            model("decompiler/navigation/usercode", testClassName = "UsercodeWithJSModule")
         }
 
         testClass<AbstractNavigateToDecompiledLibraryTest> {
@@ -496,15 +494,21 @@ fun main(args: Array<String>) {
 
         testClass<AbstractFormatterTest> {
             model("formatter", pattern = """^([^\.]+)\.after\.kt.*$""")
-            model("formatter", pattern = """^([^\.]+)\.after\.inv\.kt.*$""",
-                  testMethod = "doTestInverted", testClassName = "FormatterInverted")
+            model(
+                "formatter", pattern = """^([^\.]+)\.after\.inv\.kt.*$""",
+                testMethod = "doTestInverted", testClassName = "FormatterInverted"
+            )
         }
 
         testClass<AbstractTypingIndentationTestBase> {
-            model("indentationOnNewline", pattern = """^([^\.]+)\.after\.kt.*$""", testMethod = "doNewlineTest",
-                  testClassName = "DirectSettings")
-            model("indentationOnNewline", pattern = """^([^\.]+)\.after\.inv\.kt.*$""", testMethod = "doNewlineTestWithInvert",
-                  testClassName = "InvertedSettings")
+            model(
+                "indentationOnNewline", pattern = """^([^\.]+)\.after\.kt.*$""", testMethod = "doNewlineTest",
+                testClassName = "DirectSettings"
+            )
+            model(
+                "indentationOnNewline", pattern = """^([^\.]+)\.after\.inv\.kt.*$""", testMethod = "doNewlineTestWithInvert",
+                testClassName = "InvertedSettings"
+            )
         }
 
         testClass<AbstractDiagnosticMessageTest> {
@@ -548,8 +552,20 @@ fun main(args: Array<String>) {
         }
 
         testClass<AbstractInsertImportOnPasteTest> {
-            model("copyPaste/imports", pattern = KT_WITHOUT_DOTS_IN_NAME, testMethod = "doTestCopy", testClassName = "Copy", recursive = false)
-            model("copyPaste/imports", pattern = KT_WITHOUT_DOTS_IN_NAME, testMethod = "doTestCut", testClassName = "Cut", recursive = false)
+            model(
+                "copyPaste/imports",
+                pattern = KT_WITHOUT_DOTS_IN_NAME,
+                testMethod = "doTestCopy",
+                testClassName = "Copy",
+                recursive = false
+            )
+            model(
+                "copyPaste/imports",
+                pattern = KT_WITHOUT_DOTS_IN_NAME,
+                testMethod = "doTestCut",
+                testClassName = "Cut",
+                recursive = false
+            )
         }
 
         testClass<AbstractMoveOnCutPasteTest> {
@@ -629,6 +645,10 @@ fun main(args: Array<String>) {
             model("debugger/positionManager", recursive = false, extension = null, testClassName = "MultiFile")
         }
 
+        testClass<AbstractBreakpointApplicabilityTest> {
+            model("debugger/breakpointApplicability")
+        }
+
         testClass<AbstractKotlinExceptionFilterTest> {
             model("debugger/exceptionFilter", pattern = """^([^\.]+)$""", recursive = false)
         }
@@ -638,9 +658,24 @@ fun main(args: Array<String>) {
         }
 
         testClass<AbstractKotlinSteppingTest> {
-            model("debugger/tinyApp/src/stepping/stepIntoAndSmartStepInto", pattern = KT_WITHOUT_DOTS_IN_NAME, testMethod = "doStepIntoTest", testClassName = "StepInto")
-            model("debugger/tinyApp/src/stepping/stepIntoAndSmartStepInto", pattern = KT_WITHOUT_DOTS_IN_NAME, testMethod = "doSmartStepIntoTest", testClassName = "SmartStepInto")
-            model("debugger/tinyApp/src/stepping/stepInto", pattern = KT_WITHOUT_DOTS_IN_NAME, testMethod = "doStepIntoTest", testClassName = "StepIntoOnly")
+            model(
+                "debugger/tinyApp/src/stepping/stepIntoAndSmartStepInto",
+                pattern = KT_WITHOUT_DOTS_IN_NAME,
+                testMethod = "doStepIntoTest",
+                testClassName = "StepInto"
+            )
+            model(
+                "debugger/tinyApp/src/stepping/stepIntoAndSmartStepInto",
+                pattern = KT_WITHOUT_DOTS_IN_NAME,
+                testMethod = "doSmartStepIntoTest",
+                testClassName = "SmartStepInto"
+            )
+            model(
+                "debugger/tinyApp/src/stepping/stepInto",
+                pattern = KT_WITHOUT_DOTS_IN_NAME,
+                testMethod = "doStepIntoTest",
+                testClassName = "StepIntoOnly"
+            )
             model("debugger/tinyApp/src/stepping/stepOut", pattern = KT_WITHOUT_DOTS_IN_NAME, testMethod = "doStepOutTest")
             model("debugger/tinyApp/src/stepping/stepOver", pattern = KT_WITHOUT_DOTS_IN_NAME, testMethod = "doStepOverTest")
             model("debugger/tinyApp/src/stepping/stepOverForce", pattern = KT_WITHOUT_DOTS_IN_NAME, testMethod = "doStepOverForceTest")
@@ -683,7 +718,7 @@ fun main(args: Array<String>) {
         }
 
         testClass<AbstractQuickFixMultiModuleTest> {
-            model("multiModuleQuickFix", recursive = false, extension = null)
+            model("multiModuleQuickFix", extension = null, deep = 1)
         }
 
         testClass<AbstractKotlinGotoImplementationMultiModuleTest> {
@@ -806,13 +841,45 @@ fun main(args: Array<String>) {
         }
 
         testClass<AbstractScratchRunActionTest> {
-            model("scratch", extension = "kts", testMethod = "doScratchCompilingTest", testClassName = "ScratchCompiling", recursive = false)
+            model(
+                "scratch",
+                extension = "kts",
+                testMethod = "doScratchCompilingTest",
+                testClassName = "ScratchCompiling",
+                recursive = false
+            )
             model("scratch", extension = "kts", testMethod = "doScratchReplTest", testClassName = "ScratchRepl", recursive = false)
-            model("scratch/multiFile", extension = null, testMethod = "doScratchMultiFileTest", testClassName = "ScratchMultiFile", recursive = false)
+            model(
+                "scratch/multiFile",
+                extension = null,
+                testMethod = "doScratchMultiFileTest",
+                testClassName = "ScratchMultiFile",
+                recursive = false
+            )
 
-            model("worksheet", extension = "ws.kts", testMethod = "doWorksheetCompilingTest", testClassName = "WorksheetCompiling", recursive = false)
+            model(
+                "worksheet",
+                extension = "ws.kts",
+                testMethod = "doWorksheetCompilingTest",
+                testClassName = "WorksheetCompiling",
+                recursive = false
+            )
             model("worksheet", extension = "ws.kts", testMethod = "doWorksheetReplTest", testClassName = "WorksheetRepl", recursive = false)
-            model("worksheet/multiFile", extension = null, testMethod = "doWorksheetMultiFileTest", testClassName = "WorksheetMultiFile", recursive = false)
+            model(
+                "worksheet/multiFile",
+                extension = null,
+                testMethod = "doWorksheetMultiFileTest",
+                testClassName = "WorksheetMultiFile",
+                recursive = false
+            )
+
+            model(
+                "scratch/rightPanelOutput",
+                extension = "kts",
+                testMethod = "doRightPreviewPanelOutputTest",
+                testClassName = "ScratchRightPanelOutput",
+                recursive = false
+            )
         }
 
         testClass<AbstractScratchLineMarkersTest> {
@@ -871,7 +938,11 @@ fun main(args: Array<String>) {
         }
 
         testClass<AbstractIdeCompiledLightClassTest> {
-            model("asJava/lightClasses", excludeDirs = listOf("local", "compilationErrors", "ideRegression"), pattern = KT_OR_KTS_WITHOUT_DOTS_IN_NAME)
+            model(
+                "asJava/lightClasses",
+                excludeDirs = listOf("local", "compilationErrors", "ideRegression"),
+                pattern = KT_OR_KTS_WITHOUT_DOTS_IN_NAME
+            )
         }
     }
 
@@ -996,6 +1067,9 @@ fun main(args: Array<String>) {
         testClass<AbstractNullabilityInferenceTest> {
             model("inference/nullability")
         }
+        testClass<AbstractMutabilityInferenceTest> {
+            model("inference/mutability")
+        }
         testClass<AbstractNewJavaToKotlinCopyPasteConversionTest> {
             model("copyPaste", pattern = """^([^\.]+)\.java$""")
         }
@@ -1086,6 +1160,12 @@ fun main(args: Array<String>) {
             model("incremental/js", extension = null, excludeParentDirs = true)
         }
 
+        testClass<AbstractIncrementalJsKlibCompilerRunnerTest> {
+            model("incremental/pureKotlin", extension = null, recursive = false)
+            model("incremental/classHierarchyAffected", extension = null, recursive = false)
+            model("incremental/js", extension = null, excludeParentDirs = true)
+        }
+
         testClass<AbstractIncrementalJsCompilerRunnerWithFriendModulesDisabledTest> {
             model("incremental/js/friendsModuleDisabled", extension = null, recursive = false)
         }
@@ -1098,7 +1178,10 @@ fun main(args: Array<String>) {
         }
     }
 
-    testGroup("plugins/android-extensions/android-extensions-compiler/test",  "plugins/android-extensions/android-extensions-compiler/testData") {
+    testGroup(
+        "plugins/android-extensions/android-extensions-compiler/test",
+        "plugins/android-extensions/android-extensions-compiler/testData"
+    ) {
         testClass<AbstractAndroidSyntheticPropertyDescriptorTest> {
             model("descriptors", recursive = false, extension = null)
         }

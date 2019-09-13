@@ -36,10 +36,7 @@ import org.jetbrains.kotlin.name.FqName;
 import org.jetbrains.kotlin.psi.KtFile;
 import org.jetbrains.kotlin.scripting.definitions.ScriptDependenciesProvider;
 import org.jetbrains.kotlin.scripting.resolve.ScriptCompilationConfigurationWrapper;
-import org.jetbrains.kotlin.test.ConfigurationKind;
-import org.jetbrains.kotlin.test.InTextDirectivesUtils;
-import org.jetbrains.kotlin.test.KotlinTestUtils;
-import org.jetbrains.kotlin.test.TestJdkKind;
+import org.jetbrains.kotlin.test.*;
 import org.jetbrains.kotlin.test.clientserver.TestProxy;
 import org.jetbrains.kotlin.test.testFramework.KtUsefulTestCase;
 import org.jetbrains.kotlin.utils.ExceptionUtilsKt;
@@ -434,7 +431,7 @@ public abstract class CodegenTestCase extends KtUsefulTestCase {
         if (externalImportsProvider != null) {
             myEnvironment.getSourceFiles().forEach(
                     file -> {
-                        ScriptCompilationConfigurationWrapper refinedConfiguration = ErrorHandlingKt.valueOrNull(externalImportsProvider.getScriptConfigurationResult(file));
+                        ScriptCompilationConfigurationWrapper refinedConfiguration = externalImportsProvider.getScriptConfiguration(file);
                         if (refinedConfiguration != null) {
                             files.addAll(refinedConfiguration.getDependenciesClassPath());
                         }
@@ -741,6 +738,10 @@ public abstract class CodegenTestCase extends KtUsefulTestCase {
         }
     }
 
+    protected TargetBackend getBackend() {
+        return TargetBackend.JVM;
+    }
+
     public static class TestFile implements Comparable<TestFile> {
         public final String name;
         public final String content;
@@ -837,8 +838,17 @@ public abstract class CodegenTestCase extends KtUsefulTestCase {
         callBoxMethodAndCheckResult(classLoader, aClass, method);
     }
 
-    protected void callBoxMethodAndCheckResult(URLClassLoader classLoader, Class<?> aClass, Method method)
+    private void callBoxMethodAndCheckResult(URLClassLoader classLoader, Class<?> aClass, Method method)
             throws IOException, IllegalAccessException, InvocationTargetException {
+        callBoxMethodAndCheckResult(classLoader, aClass, method, false);
+    }
+
+    protected void callBoxMethodAndCheckResult(
+            URLClassLoader classLoader,
+            Class<?> aClass,
+            Method method,
+            boolean unexpectedBehaviour
+    ) throws IOException, IllegalAccessException, InvocationTargetException {
         String result;
         if (BOX_IN_SEPARATE_PROCESS_PORT != null) {
             result = invokeBoxInSeparateProcess(classLoader, aClass);
@@ -858,7 +868,11 @@ public abstract class CodegenTestCase extends KtUsefulTestCase {
                 }
             }
         }
-        assertEquals("OK", result);
+        if (unexpectedBehaviour) {
+            assertNotSame("OK", result);
+        } else {
+            assertEquals("OK", result);
+        }
     }
 
     @NotNull
@@ -873,5 +887,16 @@ public abstract class CodegenTestCase extends KtUsefulTestCase {
         }
 
         return new TestProxy(Integer.valueOf(BOX_IN_SEPARATE_PROCESS_PORT), aClass.getCanonicalName(), classPath).runTest();
+    }
+
+    protected void printReport(File wholeFile) {
+        boolean isIgnored = InTextDirectivesUtils.isIgnoredTarget(getBackend(), wholeFile, getIgnoreBackendDirectivePrefix());
+        if (!isIgnored) {
+            System.out.println(generateToText());
+        }
+    }
+
+    protected String getIgnoreBackendDirectivePrefix() {
+        return InTextDirectivesUtils.IGNORE_BACKEND_DIRECTIVE_PREFIX;
     }
 }

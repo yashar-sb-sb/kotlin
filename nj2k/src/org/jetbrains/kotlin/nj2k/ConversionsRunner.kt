@@ -21,76 +21,67 @@ import org.jetbrains.kotlin.nj2k.tree.JKTreeRoot
 
 object ConversionsRunner {
 
-    private fun createRootConversion(context: NewJ2kConverterContext) =
-        batchPipe {
-            //Java --> Kotlin conversions
-            +NonCodeElementsConversion()
-            +JavaModifiersConversion(context)
-            +JavaAnnotationsConversion(context)
-            +AnnotationClassConversion(context)
-            +AnnotationConversion(context)
-            +ModalityConversion(context)
-            +FunctionAsAnonymousObjectToLambdaConversion()
-            +ReturnStatementInLambdaExpressionConversion()
-            +BoxedTypeOperationsConversion(context)
-            +AssignmentAsExpressionToAlsoConversion(context)
-            +AssignmentStatementValCreationConversion(context)
-            +AssignmentStatementOperatorConversion()
-            +AssignmentStatementSimplifyValConversion()
-            +AssignmentStatementSimplifyAlsoConversion()
-            +AssignmentStatementSplitAlsoConversion()
-            +PolyadicExpressionConversion()
-            +OperatorExpressionConversion(context)
-            +AddParenthesisForLineBreaksInBinaryExpression()
-            +ThrowStatementConversion()
-            +ArrayInitializerConversion(context)
-            +TryStatementConversion(context)
-            +EnumFieldAccessConversion(context)
-            +StaticMemberAccessConversion(context)
-            +SynchronizedStatementConversion(context)
-            +JetbrainsNullableAnnotationsConverter(context)
-            +DefaultArgumentsConversion(context)
-            +ConstructorConversion(context)
-            +StaticInitDeclarationConversion()
-            +ImplicitInitializerConversion(context)
-            +ParameterModificationInMethodCallsConversion(context)
-            +BlockToRunConversion(context)
-            +PrimaryConstructorDetectConversion(context)
-            +InsertDefaultPrimaryConstructorConversion(context)
-            +FieldToPropertyConversion()
-            +JavaStandardMethodsConversion(context)
-            +JavaMethodToKotlinFunctionConversion(context)
-            +MainFunctionConversion(context)
-            +AssertStatementConversion(context)
-            +SwitchStatementConversion(context)
-            +LiteralConversion()
-            +ForConversion(context)
-            +LabeledStatementConversion()
-            +ArrayOperationsConversion(context)
-            +EqualsOperatorConversion(context)
-            +TypeMappingConversion(context)
-            +InternalDeclarationConversion(context)
+    private fun createConversions(context: NewJ2kConverterContext) = listOf(
+        NonCodeElementsConversion(context),
+        JavaModifiersConversion(context),
+        JavaAnnotationsConversion(context),
+        AnnotationClassConversion(context),
+        AnnotationConversion(context),
+        ModalityConversion(context),
+        FunctionAsAnonymousObjectToLambdaConversion(context),
+        ReturnStatementInLambdaExpressionConversion(context),
+        BoxedTypeOperationsConversion(context),
+        AnyWithStringConcatenationConversion(context),
+        AssignmentExpressionUnfoldingConversion(context),
+        AddParenthesisForLineBreaksInBinaryExpression(context),
+        ThrowStatementConversion(context),
+        ArrayInitializerConversion(context),
+        TryStatementConversion(context),
+        EnumFieldAccessConversion(context),
+        StaticMemberAccessConversion(context),
+        SynchronizedStatementConversion(context),
+        JetbrainsNullableAnnotationsConverter(context),
+        DefaultArgumentsConversion(context),
+        ConstructorConversion(context),
+        StaticInitDeclarationConversion(context),
+        ImplicitInitializerConversion(context),
+        ParameterModificationInMethodCallsConversion(context),
+        BlockToRunConversion(context),
+        PrimaryConstructorDetectConversion(context),
+        InsertDefaultPrimaryConstructorConversion(context),
+        FieldToPropertyConversion(context),
+        JavaStandardMethodsConversion(context),
+        JavaMethodToKotlinFunctionConversion(context),
+        MainFunctionConversion(context),
+        AssertStatementConversion(context),
+        SwitchStatementConversion(context),
+        LiteralConversion(context),
+        ForConversion(context),
+        LabeledStatementConversion(context),
+        ArrayOperationsConversion(context),
+        EqualsOperatorConversion(context),
+        TypeMappingConversion(context),
+        InternalDeclarationConversion(context),
 
-            //Kotlin --> Kotlin conversions
-            +InnerClassConversion()
-            +FilterImportsConversion()
-            +StaticsToCompanionExtractConversion()
-            +InterfaceWithFieldConversion()
-            +ClassToObjectPromotionConversion(context)
-            +RemoveWrongExtraModifiersForSingleFunctionsConversion()
-            +MethodReferenceToLambdaConversion(context)
-            +BuiltinMembersConversion(context)
-            +ImplicitCastsConversion(context)
-            +LiteralConversion()
-
-            +CollectImportsConversion(context)
-            +MoveInitBlocksToTheEndConversion()
-            +AddElementsInfoConversion(context)
-        }
+        InnerClassConversion(context),
+        StaticsToCompanionExtractConversion(context),
+        InterfaceWithFieldConversion(context),
+        ClassToObjectPromotionConversion(context),
+        RemoveWrongExtraModifiersForSingleFunctionsConversion(context),
+        MethodReferenceToLambdaConversion(context),
+        BuiltinMembersConversion(context),
+        ImplicitCastsConversion(context),
+        LiteralConversion(context),
+        CollectImportsConversion(context),
+        FilterImportsConversion(context),
+        MoveInitBlocksToTheEndConversion(context),
+        AddElementsInfoConversion(context)
+    )
 
     fun doApply(trees: List<JKTreeRoot>, context: NewJ2kConverterContext) {
-        val conversion = createRootConversion(context)
-        conversion.runConversion(trees, context)
+        val conversions = createConversions(context)
+        for (conversion in conversions) {
+            conversion.runConversion(trees, context)
+        }
     }
-
 }

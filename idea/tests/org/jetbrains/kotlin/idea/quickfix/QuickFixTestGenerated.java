@@ -740,6 +740,11 @@ public class QuickFixTestGenerated extends AbstractQuickFixTest {
             runTest("idea/testData/quickfix/addInitializer/topLevelProperty.kt");
         }
 
+        @TestMetadata("topLevelPropertyVarClass.kt")
+        public void testTopLevelPropertyVarClass() throws Exception {
+            runTest("idea/testData/quickfix/addInitializer/topLevelPropertyVarClass.kt");
+        }
+
         @TestMetadata("topLevelPropertyVarGetterOnly.kt")
         public void testTopLevelPropertyVarGetterOnly() throws Exception {
             runTest("idea/testData/quickfix/addInitializer/topLevelPropertyVarGetterOnly.kt");
@@ -1731,6 +1736,16 @@ public class QuickFixTestGenerated extends AbstractQuickFixTest {
         @TestMetadata("checkNoStackOverflowInImportInnerClassInCurrentFile.kt")
         public void testCheckNoStackOverflowInImportInnerClassInCurrentFile() throws Exception {
             runTest("idea/testData/quickfix/autoImports/checkNoStackOverflowInImportInnerClassInCurrentFile.kt");
+        }
+
+        @TestMetadata("conflictWithClassIdentifier.kt")
+        public void testConflictWithClassIdentifier() throws Exception {
+            runTest("idea/testData/quickfix/autoImports/conflictWithClassIdentifier.kt");
+        }
+
+        @TestMetadata("conflictWithLocalIdentifier.kt")
+        public void testConflictWithLocalIdentifier() throws Exception {
+            runTest("idea/testData/quickfix/autoImports/conflictWithLocalIdentifier.kt");
         }
 
         @TestMetadata("enumEntries.kt")
@@ -4779,6 +4794,11 @@ public class QuickFixTestGenerated extends AbstractQuickFixTest {
                 @TestMetadata("notOnTypeArgumentList.kt")
                 public void testNotOnTypeArgumentList() throws Exception {
                     runTest("idea/testData/quickfix/createFromUsage/createTypeParameter/inReferencedDeclaration/notOnTypeArgumentList.kt");
+                }
+
+                @TestMetadata("typealias.kt")
+                public void testTypealias() throws Exception {
+                    runTest("idea/testData/quickfix/createFromUsage/createTypeParameter/inReferencedDeclaration/typealias.kt");
                 }
             }
         }

@@ -99,9 +99,14 @@ public class FirDiagnosticsSmokeTestGenerated extends AbstractFirDiagnosticsSmok
         runTest("compiler/testData/diagnostics/tests/BreakContinue.kt");
     }
 
-    @TestMetadata("BreakContinueInWhen.kt")
-    public void testBreakContinueInWhen() throws Exception {
-        runTest("compiler/testData/diagnostics/tests/BreakContinueInWhen.kt");
+    @TestMetadata("BreakContinueInWhen_after.kt")
+    public void testBreakContinueInWhen_after() throws Exception {
+        runTest("compiler/testData/diagnostics/tests/BreakContinueInWhen_after.kt");
+    }
+
+    @TestMetadata("BreakContinueInWhen_before.kt")
+    public void testBreakContinueInWhen_before() throws Exception {
+        runTest("compiler/testData/diagnostics/tests/BreakContinueInWhen_before.kt");
     }
 
     @TestMetadata("Builders.kt")
@@ -1687,6 +1692,11 @@ public class FirDiagnosticsSmokeTestGenerated extends AbstractFirDiagnosticsSmok
             runTest("compiler/testData/diagnostics/tests/callableReference/classVsPackage.kt");
         }
 
+        @TestMetadata("constraintFromLHSWithCorrectDirection.kt")
+        public void testConstraintFromLHSWithCorrectDirection() throws Exception {
+            runTest("compiler/testData/diagnostics/tests/callableReference/constraintFromLHSWithCorrectDirection.kt");
+        }
+
         @TestMetadata("correctInfoAfterArrayLikeCall.kt")
         public void testCorrectInfoAfterArrayLikeCall() throws Exception {
             runTest("compiler/testData/diagnostics/tests/callableReference/correctInfoAfterArrayLikeCall.kt");
@@ -1705,6 +1715,16 @@ public class FirDiagnosticsSmokeTestGenerated extends AbstractFirDiagnosticsSmok
         @TestMetadata("expectedTypeAsSubtypeOfFunctionType.kt")
         public void testExpectedTypeAsSubtypeOfFunctionType() throws Exception {
             runTest("compiler/testData/diagnostics/tests/callableReference/expectedTypeAsSubtypeOfFunctionType.kt");
+        }
+
+        @TestMetadata("functionReferenceWithDefaultValueAsOtherFunctionType.kt")
+        public void testFunctionReferenceWithDefaultValueAsOtherFunctionType() throws Exception {
+            runTest("compiler/testData/diagnostics/tests/callableReference/functionReferenceWithDefaultValueAsOtherFunctionType.kt");
+        }
+
+        @TestMetadata("functionReferenceWithDefaultValueAsOtherFunctionType_enabled.kt")
+        public void testFunctionReferenceWithDefaultValueAsOtherFunctionType_enabled() throws Exception {
+            runTest("compiler/testData/diagnostics/tests/callableReference/functionReferenceWithDefaultValueAsOtherFunctionType_enabled.kt");
         }
 
         @TestMetadata("kt15439_completeCall.kt")
@@ -2484,6 +2504,11 @@ public class FirDiagnosticsSmokeTestGenerated extends AbstractFirDiagnosticsSmok
             @TestMetadata("multipleOutersAndMultipleCallableReferences.kt")
             public void testMultipleOutersAndMultipleCallableReferences() throws Exception {
                 runTest("compiler/testData/diagnostics/tests/callableReference/resolve/multipleOutersAndMultipleCallableReferences.kt");
+            }
+
+            @TestMetadata("noAmbiguityBetweenTopLevelAndMemberProperty.kt")
+            public void testNoAmbiguityBetweenTopLevelAndMemberProperty() throws Exception {
+                runTest("compiler/testData/diagnostics/tests/callableReference/resolve/noAmbiguityBetweenTopLevelAndMemberProperty.kt");
             }
 
             @TestMetadata("noFakeDescriptorForObject.kt")
@@ -10212,6 +10237,11 @@ public class FirDiagnosticsSmokeTestGenerated extends AbstractFirDiagnosticsSmok
                 runTest("compiler/testData/diagnostics/tests/inference/constraints/operationsOnIntegerValueTypes.kt");
             }
 
+            @TestMetadata("recursiveJavaTypeWithStarProjection.kt")
+            public void testRecursiveJavaTypeWithStarProjection() throws Exception {
+                runTest("compiler/testData/diagnostics/tests/inference/constraints/recursiveJavaTypeWithStarProjection.kt");
+            }
+
             @TestMetadata("returnLambdaFromLambda.kt")
             public void testReturnLambdaFromLambda() throws Exception {
                 runTest("compiler/testData/diagnostics/tests/inference/constraints/returnLambdaFromLambda.kt");
@@ -10341,6 +10371,11 @@ public class FirDiagnosticsSmokeTestGenerated extends AbstractFirDiagnosticsSmok
             @TestMetadata("kt32081.kt")
             public void testKt32081() throws Exception {
                 runTest("compiler/testData/diagnostics/tests/inference/nothingType/kt32081.kt");
+            }
+
+            @TestMetadata("kt32207.kt")
+            public void testKt32207() throws Exception {
+                runTest("compiler/testData/diagnostics/tests/inference/nothingType/kt32207.kt");
             }
 
             @TestMetadata("kt32388.kt")
@@ -17035,6 +17070,11 @@ public class FirDiagnosticsSmokeTestGenerated extends AbstractFirDiagnosticsSmok
             runTest("compiler/testData/diagnostics/tests/regressions/kt2768.kt");
         }
 
+        @TestMetadata("kt28001.kt")
+        public void testKt28001() throws Exception {
+            runTest("compiler/testData/diagnostics/tests/regressions/kt28001.kt");
+        }
+
         @TestMetadata("kt282.kt")
         public void testKt282() throws Exception {
             runTest("compiler/testData/diagnostics/tests/regressions/kt282.kt");
@@ -17083,6 +17123,11 @@ public class FirDiagnosticsSmokeTestGenerated extends AbstractFirDiagnosticsSmok
         @TestMetadata("kt328.kt")
         public void testKt328() throws Exception {
             runTest("compiler/testData/diagnostics/tests/regressions/kt328.kt");
+        }
+
+        @TestMetadata("kt32836.kt")
+        public void testKt32836() throws Exception {
+            runTest("compiler/testData/diagnostics/tests/regressions/kt32836.kt");
         }
 
         @TestMetadata("kt334.kt")
@@ -17353,6 +17398,11 @@ public class FirDiagnosticsSmokeTestGenerated extends AbstractFirDiagnosticsSmok
         @TestMetadata("kt860.kt")
         public void testKt860() throws Exception {
             runTest("compiler/testData/diagnostics/tests/regressions/kt860.kt");
+        }
+
+        @TestMetadata("kt9384.kt")
+        public void testKt9384() throws Exception {
+            runTest("compiler/testData/diagnostics/tests/regressions/kt9384.kt");
         }
 
         @TestMetadata("kt9620.kt")

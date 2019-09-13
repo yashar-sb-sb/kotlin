@@ -7,73 +7,54 @@ package org.jetbrains.kotlin.backend.jvm.codegen
 
 import org.jetbrains.kotlin.backend.jvm.JvmBackendContext
 import org.jetbrains.kotlin.builtins.functions.FunctionClassDescriptor
-import org.jetbrains.kotlin.builtins.isSuspendFunctionType
-import org.jetbrains.kotlin.builtins.transformSuspendFunctionToRuntimeFunctionType
 import org.jetbrains.kotlin.codegen.AsmUtil
-import org.jetbrains.kotlin.codegen.ClassBuilderMode
 import org.jetbrains.kotlin.codegen.JvmCodegenUtil
-import org.jetbrains.kotlin.codegen.OwnerKind
 import org.jetbrains.kotlin.codegen.signature.AsmTypeFactory
 import org.jetbrains.kotlin.codegen.signature.JvmSignatureWriter
 import org.jetbrains.kotlin.codegen.state.KotlinTypeMapper
-import org.jetbrains.kotlin.ir.declarations.*
+import org.jetbrains.kotlin.ir.declarations.IrClass
+import org.jetbrains.kotlin.ir.declarations.IrPackageFragment
+import org.jetbrains.kotlin.ir.declarations.IrTypeParameter
 import org.jetbrains.kotlin.ir.symbols.IrTypeParameterSymbol
 import org.jetbrains.kotlin.ir.types.*
 import org.jetbrains.kotlin.ir.types.impl.originalKotlinType
 import org.jetbrains.kotlin.ir.util.defaultType
 import org.jetbrains.kotlin.ir.util.fqNameWhenAvailable
+import org.jetbrains.kotlin.ir.util.isSuspendFunction
 import org.jetbrains.kotlin.load.kotlin.TypeMappingMode
 import org.jetbrains.kotlin.load.kotlin.computeExpandedTypeForInlineClass
 import org.jetbrains.kotlin.load.kotlin.mapBuiltInType
 import org.jetbrains.kotlin.name.SpecialNames
-import org.jetbrains.kotlin.resolve.calls.model.ResolvedCall
 import org.jetbrains.kotlin.resolve.jvm.AsmTypes
-import org.jetbrains.kotlin.resolve.jvm.jvmSignature.JvmMethodGenericSignature
-import org.jetbrains.kotlin.resolve.jvm.jvmSignature.JvmMethodSignature
 import org.jetbrains.kotlin.types.Variance
 import org.jetbrains.org.objectweb.asm.Type
-import org.jetbrains.org.objectweb.asm.commons.Method
 
 class IrTypeMapper(private val context: JvmBackendContext) {
-    val kotlinTypeMapper: KotlinTypeMapper = context.state.typeMapper
-    private val typeSystem = IrTypeCheckerContext(context.irBuiltIns)
-
-    val classBuilderMode: ClassBuilderMode
-        get() = kotlinTypeMapper.classBuilderMode
+    internal val typeSystem = IrTypeCheckerContext(context.irBuiltIns)
 
     fun classInternalName(irClass: IrClass): String =
         context.getLocalClassInfo(irClass)?.internalName
             ?: JvmCodegenUtil.sanitizeNameIfNeeded(computeInternalName(irClass), context.state.languageVersionSettings)
 
-    fun mapAsmMethod(irFunction: IrFunction): Method =
-        kotlinTypeMapper.mapAsmMethod(irFunction.descriptor)
+    fun writeFormalTypeParameters(irParameters: List<IrTypeParameter>, sw: JvmSignatureWriter) {
+        if (sw.skipGenericSignature()) return
+        with(KotlinTypeMapper) {
+            for (typeParameter in irParameters) {
+                typeSystem.writeFormalTypeParameter(typeParameter.symbol, sw) { type, mode ->
+                    mapType(type as IrType, mode, sw)
+                }
+            }
+        }
+    }
 
-    fun mapFieldSignature(irField: IrField) =
-        kotlinTypeMapper.mapFieldSignature(irField.type.toKotlinType(), irField.descriptor)
-
-    fun mapFunctionName(irFunction: IrFunction, ownerKind: OwnerKind): String =
-        kotlinTypeMapper.mapFunctionName(irFunction.descriptor, ownerKind)
-
-    fun mapImplementationOwner(irDeclaration: IrDeclaration): Type =
-        kotlinTypeMapper.mapImplementationOwner(irDeclaration.descriptor)
-
-    fun mapReturnType(irFunction: IrFunction): Type =
-        kotlinTypeMapper.mapReturnType(irFunction.descriptor)
-
-    fun mapSignatureSkipGeneric(f: IrFunction, kind: OwnerKind = OwnerKind.IMPLEMENTATION): JvmMethodSignature =
-        kotlinTypeMapper.mapSignatureSkipGeneric(f.descriptor, kind)
-
-    fun mapSignatureWithGeneric(f: IrFunction, kind: OwnerKind): JvmMethodGenericSignature =
-        kotlinTypeMapper.mapSignatureWithGeneric(f.descriptor, kind)
-
-    fun mapToCallableMethod(f: IrFunction, superCall: Boolean, kind: OwnerKind? = null, resolvedCall: ResolvedCall<*>? = null) =
-        kotlinTypeMapper.mapToCallableMethod(f.descriptor, superCall, kind, resolvedCall)
-
-    fun writeFormalTypeParameters(irParameters: List<IrTypeParameter>, sw: JvmSignatureWriter) =
-        kotlinTypeMapper.writeFormalTypeParameters(irParameters.map { it.descriptor }, sw)
-
-    fun boxType(irType: IrType): Type =
-        AsmUtil.boxType(mapType(irType), irType.toKotlinType(), kotlinTypeMapper)
+    fun boxType(irType: IrType): Type {
+        val irClass = irType.classOrNull?.owner
+        if (irClass != null && irClass.isInline) {
+            return mapTypeAsDeclaration(irType)
+        }
+        val type = mapType(irType)
+        return AsmUtil.boxPrimitiveType(type) ?: type
+    }
 
     fun mapType(
         type: IrType,
@@ -85,11 +66,13 @@ class IrTypeMapper(private val context: JvmBackendContext) {
             error("Unexpected type: $type (original Kotlin type=$kotlinType of ${kotlinType?.let { it::class }})")
         }
 
-        // TODO: rewrite this part to produce the correct Type without the fake descriptor
-        if (type.toKotlinType().isSuspendFunctionType) {
-            return kotlinTypeMapper.mapType(
-                transformSuspendFunctionToRuntimeFunctionType(type.toKotlinType(), isReleaseCoroutines = true), sw, mode
-            )
+        if (type.isSuspendFunction()) {
+            val arguments =
+                type.arguments.dropLast(1).map { (it as IrTypeProjection).type } +
+                        context.ir.symbols.continuationClass.typeWith((type.arguments.last() as IrTypeProjection).type) +
+                        context.irBuiltIns.anyNType
+            val runtimeFunctionType = context.referenceClass(context.builtIns.getFunction(arguments.size - 1)).typeWith(arguments)
+            return mapType(runtimeFunctionType, mode, sw)
         }
 
         with(typeSystem) {
@@ -164,8 +147,8 @@ class IrTypeMapper(private val context: JvmBackendContext) {
             }
             else -> error(
                 "Local class should have its name computed in InventNamesForLocalClasses: ${klass.fqNameWhenAvailable}\n" +
-                        "Ensure that any lowering that transforms elements with local class info (classes, function references, " +
-                        "IrTypeOperatorCall for SAM conversions) invokes `copyAttributes` on the transformed element."
+                        "Ensure that any lowering that transforms elements with local class info (classes, function references) " +
+                        "invokes `copyAttributes` on the transformed element."
             )
         }
     }

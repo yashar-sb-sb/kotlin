@@ -6,7 +6,6 @@
 package org.jetbrains.kotlin.nj2k.postProcessing.processings
 
 import com.intellij.psi.PsiElement
-import com.intellij.psi.PsiMethod
 import com.intellij.psi.search.searches.ReferencesSearch
 import org.jetbrains.kotlin.descriptors.CallableDescriptor
 import org.jetbrains.kotlin.descriptors.VariableDescriptor
@@ -18,14 +17,15 @@ import org.jetbrains.kotlin.idea.core.implicitModality
 import org.jetbrains.kotlin.idea.core.implicitVisibility
 import org.jetbrains.kotlin.idea.core.replaced
 import org.jetbrains.kotlin.idea.core.setVisibility
+import org.jetbrains.kotlin.idea.debugger.sequence.psi.callName
 import org.jetbrains.kotlin.idea.inspections.RedundantExplicitTypeInspection
 import org.jetbrains.kotlin.idea.inspections.RedundantSamConstructorInspection
 import org.jetbrains.kotlin.idea.inspections.UseExpressionBodyInspection
+import org.jetbrains.kotlin.idea.inspections.collections.isCalling
 import org.jetbrains.kotlin.idea.intentions.ConvertToStringTemplateIntention
 import org.jetbrains.kotlin.idea.intentions.RemoveExplicitTypeArgumentsIntention
 import org.jetbrains.kotlin.idea.intentions.UsePropertyAccessSyntaxIntention
 import org.jetbrains.kotlin.idea.intentions.addUseSiteTarget
-import org.jetbrains.kotlin.idea.refactoring.fqName.getKotlinFqName
 import org.jetbrains.kotlin.idea.references.KtSimpleNameReference
 import org.jetbrains.kotlin.idea.references.mainReference
 import org.jetbrains.kotlin.idea.references.readWriteAccess
@@ -33,14 +33,13 @@ import org.jetbrains.kotlin.idea.util.getResolutionScope
 import org.jetbrains.kotlin.j2k.ConverterSettings
 import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.name.FqName
-import org.jetbrains.kotlin.nj2k.parentOfType
 import org.jetbrains.kotlin.nj2k.postProcessing.ApplicabilityBasedInspectionLikeProcessing
 import org.jetbrains.kotlin.nj2k.postProcessing.InspectionLikeProcessing
 import org.jetbrains.kotlin.nj2k.postProcessing.generalInspectionBasedProcessing
-import org.jetbrains.kotlin.nj2k.postProcessing.resolve
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.*
 import org.jetbrains.kotlin.resolve.BindingContext
+import org.jetbrains.kotlin.types.checker.KotlinTypeChecker
 import org.jetbrains.kotlin.types.isNullable
 import org.jetbrains.kotlin.utils.addToStdlib.cast
 import org.jetbrains.kotlin.utils.addToStdlib.safeAs
@@ -56,8 +55,8 @@ class RemoveExplicitPropertyTypeProcessing : ApplicabilityBasedInspectionLikePro
         val initializer = element.initializer ?: return false
         val withoutExpectedType =
             initializer.analyzeInContext(initializer.getResolutionScope()).getType(initializer) ?: return false
-        val descriptor = element.resolveToDescriptorIfAny() as? CallableDescriptor ?: return false
-        return withoutExpectedType == descriptor.returnType
+        val typeBeDescriptor = element.resolveToDescriptorIfAny().safeAs<CallableDescriptor>()?.returnType ?: return false
+        return KotlinTypeChecker.DEFAULT.equalTypes(withoutExpectedType, typeBeDescriptor)
     }
 
     override fun apply(element: KtProperty) {
@@ -106,8 +105,8 @@ class RemoveJavaStreamsCollectCallTypeArgumentsProcessing :
     ApplicabilityBasedInspectionLikeProcessing<KtCallExpression>(KtCallExpression::class) {
     override fun isApplicableTo(element: KtCallExpression, settings: ConverterSettings?): Boolean {
         if (element.typeArgumentList == null) return false
-        val resolved = element.calleeExpression?.mainReference?.resolve() as? PsiMethod ?: return false
-        return resolved.getKotlinFqName()?.asString() == COLLECT_FQ_NAME
+        if (element.callName() != COLLECT_FQ_NAME.shortName().identifier) return false
+        return element.isCalling(COLLECT_FQ_NAME)
     }
 
     override fun apply(element: KtCallExpression) {
@@ -115,7 +114,7 @@ class RemoveJavaStreamsCollectCallTypeArgumentsProcessing :
     }
 
     companion object {
-        private const val COLLECT_FQ_NAME = "java.util.stream.Stream.collect"
+        private val COLLECT_FQ_NAME = FqName("java.util.stream.Stream.collect")
     }
 }
 
@@ -219,7 +218,7 @@ class UninitializedVariableReferenceFromInitializerToThisReferenceProcessing :
 
     override fun createAction(element: PsiElement, settings: ConverterSettings?): (() -> Unit)? {
         if (element !is KtSimpleNameExpression) return null
-        val anonymousObject = element.getParentOfType<KtClassOrObject>(true)?.takeIf { it.name == null } ?: return null
+        val anonymousObject = element.getStrictParentOfType<KtClassOrObject>()?.takeIf { it.name == null } ?: return null
 
         val resolved = element.mainReference.resolve() ?: return null
         if (resolved.isAncestor(element, strict = true)) {
@@ -241,9 +240,9 @@ class UnresolvedVariableReferenceFromInitializerToThisReferenceProcessing :
     override fun createAction(element: PsiElement, settings: ConverterSettings?): (() -> Unit)? {
         if (element !is KtSimpleNameExpression || element.mainReference.resolve() != null) return null
 
-        val anonymousObject = element.getParentOfType<KtClassOrObject>(true) ?: return null
+        val anonymousObject = element.getStrictParentOfType<KtClassOrObject>() ?: return null
 
-        val variable = anonymousObject.getParentOfType<KtVariableDeclaration>(true) ?: return null
+        val variable = anonymousObject.getStrictParentOfType<KtVariableDeclaration>() ?: return null
 
         if (variable.nameAsName == element.getReferencedNameAsName() &&
             variable.initializer?.getChildOfType<KtClassOrObject>() == anonymousObject
@@ -260,7 +259,7 @@ class VarToValProcessing : ApplicabilityBasedInspectionLikeProcessing<KtProperty
         ReferencesSearch.search(this, useScope).any { usage ->
             (usage as? KtSimpleNameReference)?.element?.let { nameReference ->
                 val receiver = nameReference.parent?.safeAs<KtDotQualifiedExpression>()?.receiverExpression
-                if (nameReference.parentOfType<KtAnonymousInitializer>() != null
+                if (nameReference.getStrictParentOfType<KtAnonymousInitializer>() != null
                     && (receiver == null || receiver is KtThisExpression)
                 ) return@let false
                 nameReference.readWriteAccess(useResolveForReadWrite = true).isWrite
@@ -287,13 +286,10 @@ class JavaObjectEqualsToEqOperatorProcessing : ApplicabilityBasedInspectionLikeP
     }
 
     override fun isApplicableTo(element: KtCallExpression, settings: ConverterSettings?): Boolean {
+        if (element.callName() != CALL_FQ_NAME.shortName().identifier) return false
         if (element.valueArguments.size != 2) return false
         if (element.valueArguments.any { it.getArgumentExpression() == null }) return false
-        val target = element.calleeExpression
-            .safeAs<KtReferenceExpression>()
-            ?.resolve()
-            ?: return false
-        return target.getKotlinFqName() == CALL_FQ_NAME
+        return element.isCalling(CALL_FQ_NAME)
     }
 
     override fun apply(element: KtCallExpression) {

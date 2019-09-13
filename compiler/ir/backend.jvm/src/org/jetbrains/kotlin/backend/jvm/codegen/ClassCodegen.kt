@@ -11,6 +11,7 @@ import org.jetbrains.kotlin.backend.jvm.lower.constantValue
 import org.jetbrains.kotlin.codegen.*
 import org.jetbrains.kotlin.codegen.binding.CodegenBinding
 import org.jetbrains.kotlin.codegen.inline.DefaultSourceMapper
+import org.jetbrains.kotlin.codegen.inline.ReifiedTypeParametersUsages
 import org.jetbrains.kotlin.codegen.inline.SourceMapper
 import org.jetbrains.kotlin.codegen.serialization.JvmSerializationBindings
 import org.jetbrains.kotlin.codegen.serialization.JvmSerializerExtension
@@ -40,19 +41,23 @@ import java.io.File
 open class ClassCodegen protected constructor(
     internal val irClass: IrClass,
     val context: JvmBackendContext,
-    private val parentClassCodegen: ClassCodegen? = null
+    private val parentClassCodegen: ClassCodegen? = null,
+    private val withinInline: Boolean = false
 ) : InnerClassConsumer {
     private val innerClasses = mutableListOf<IrClass>()
 
     val state = context.state
 
     val typeMapper = context.typeMapper
+    val methodSignatureMapper = context.methodSignatureMapper
 
     val descriptor = irClass.descriptor
 
     val type: Type = typeMapper.mapClass(irClass)
 
     val visitor: ClassBuilder = createClassBuilder()
+
+    val reifiedTypeParametersUsages = ReifiedTypeParametersUsages()
 
     open fun createClassBuilder() = state.factory.newVisitor(
         OtherOrigin(descriptor.psiElement, descriptor),
@@ -70,7 +75,10 @@ open class ClassCodegen protected constructor(
             else -> null
         }
 
-    fun generate() {
+    fun generate(): ReifiedTypeParametersUsages {
+        if (withinInline) {
+            getOrCreateSourceMapper() //initialize default mapping that would be later written in class file
+        }
         val superClassInfo = irClass.getSuperClassInfo(typeMapper)
         val signature = getSignature(irClass, type, superClassInfo, typeMapper)
 
@@ -83,7 +91,7 @@ open class ClassCodegen protected constructor(
             signature.superclassName,
             signature.interfaces.toTypedArray()
         )
-        AnnotationCodegen(this, context.state, visitor.visitor::visitAnnotation).genAnnotations(irClass, null)
+        AnnotationCodegen(this, context, visitor.visitor::visitAnnotation).genAnnotations(irClass, null)
 
         val nestedClasses = irClass.declarations.mapNotNull { declaration ->
             if (declaration is IrClass) {
@@ -121,6 +129,7 @@ open class ClassCodegen protected constructor(
         } else {
             done()
         }
+        return reifiedTypeParametersUsages
     }
 
     private fun generateKotlinMetadataAnnotation() {
@@ -228,8 +237,8 @@ open class ClassCodegen protected constructor(
         }
     }
 
-    fun generateLocalClass(klass: IrClass) {
-        ClassCodegen(klass, context, this).generate()
+    fun generateLocalClass(klass: IrClass, withinInline: Boolean): ReifiedTypeParametersUsages {
+        return ClassCodegen(klass, context, this, withinInline = withinInline || this.withinInline).generate()
     }
 
     private fun generateField(field: IrField) {
@@ -238,7 +247,7 @@ open class ClassCodegen protected constructor(
         val fieldType = typeMapper.mapType(field)
         val fieldSignature =
             if (field.origin == IrDeclarationOrigin.DELEGATE) null
-            else typeMapper.mapFieldSignature(field)
+            else methodSignatureMapper.mapFieldSignature(field)
         val fieldName = field.name.asString()
         // The ConstantValue attribute makes the initializer part of the ABI, which is why since 1.4
         // it is no longer set unless the property is explicitly `const`.
@@ -249,7 +258,7 @@ open class ClassCodegen protected constructor(
             fieldSignature, field.constantValue(implicitConst)?.value
         )
 
-        AnnotationCodegen(this, state, fv::visitAnnotation).genAnnotations(field, fieldType)
+        AnnotationCodegen(this, context, fv::visitAnnotation).genAnnotations(field, fieldType)
 
         val descriptor = field.metadata?.descriptor
         if (descriptor != null) {
@@ -334,7 +343,7 @@ open class ClassCodegen protected constructor(
             // in the source.
             val containingDeclaration = irClass.symbol.owner.parent
             if (containingDeclaration is IrFunction) {
-                val method = typeMapper.mapAsmMethod(containingDeclaration)
+                val method = methodSignatureMapper.mapAsmMethod(containingDeclaration)
                 visitor.visitOuterClass(outerClassName, method.name, method.descriptor)
             } else if (irClass.isAnonymousObject) {
                 visitor.visitOuterClass(outerClassName, null, null)
@@ -351,7 +360,7 @@ open class ClassCodegen protected constructor(
 }
 
 private val IrClass.flags: Int
-    get() = origin.flags or getVisibilityAccessFlagForClass() or when {
+    get() = origin.flags or getVisibilityAccessFlagForClass() or deprecationFlags or when {
         isAnnotationClass -> Opcodes.ACC_ANNOTATION or Opcodes.ACC_INTERFACE or Opcodes.ACC_ABSTRACT
         isInterface -> Opcodes.ACC_INTERFACE or Opcodes.ACC_ABSTRACT
         isEnumClass -> Opcodes.ACC_ENUM or Opcodes.ACC_SUPER or modality.flags
@@ -359,7 +368,7 @@ private val IrClass.flags: Int
     }
 
 private val IrField.flags: Int
-    get() = origin.flags or visibility.flags or
+    get() = origin.flags or visibility.flags or (correspondingPropertySymbol?.owner?.deprecationFlags ?: 0) or
             (if (isFinal) Opcodes.ACC_FINAL else 0) or
             (if (isStatic) Opcodes.ACC_STATIC else 0) or
             (if (hasAnnotation(VOLATILE_ANNOTATION_FQ_NAME)) Opcodes.ACC_VOLATILE else 0) or
