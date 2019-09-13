@@ -56,10 +56,15 @@ abstract class Visibility protected constructor(
         return Visibilities.compareLocal(this, visibility)
     }
 
-    open val displayName: String
+    // internal representation for descriptors
+    open val internalDisplayName: String
         get() = name
 
-    override final fun toString() = displayName
+    // external representation for diagnostics
+    open val externalDisplayName: String
+        get() = internalDisplayName
+
+    override final fun toString() = internalDisplayName
 
     open fun normalize(): Visibility = this
 
